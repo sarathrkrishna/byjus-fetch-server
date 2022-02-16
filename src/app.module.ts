@@ -4,6 +4,7 @@ import configuration from './config/configuration';
 import { MongooseModule } from '@nestjs/mongoose';
 import { TaskModule } from './tasks/task.module';
 import { ConfigDto } from './config/config.dto';
+import { NetworkModule } from './network/network.module';
 
 const NODE_ENV = process.env.NODE_ENV;
 
@@ -22,6 +23,7 @@ const NODE_ENV = process.env.NODE_ENV;
       inject: [ConfigService],
     }),
     TaskModule,
+    NetworkModule,
   ],
   controllers: [],
   providers: [],
