@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Account, AccountDocument } from './account.schema';
+import { ObjectId } from 'src/shared/dtos/mongo.dto';
 
 @Injectable()
 export class AccountService {
@@ -10,6 +11,12 @@ export class AccountService {
   ) {}
 
   async findAllAccounts(): Promise<Account[]> {
-    return this.accountModel.find().exec();
+    return await this.accountModel.find().exec();
+  }
+
+  async updateOneAccount(accountId: ObjectId, updateData: Account) {
+    return await this.accountModel
+      .findOneAndUpdate({ _id: accountId }, updateData)
+      .exec();
   }
 }

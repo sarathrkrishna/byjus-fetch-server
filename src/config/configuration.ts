@@ -4,4 +4,5 @@ import { ConfigDto, EnvType } from './config.dto';
 export default (): ConfigDto => ({
   port: parseInt(process.env.PORT, 10) || DEF_PORT,
   env: (process.env.NODE_ENV as EnvType) || DEF_ENV,
+  db_connection_string: process.env.DB_CONNECTION_STRING,
 });
