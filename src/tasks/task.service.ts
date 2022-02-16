@@ -1,14 +1,20 @@
 import { Injectable } from '@nestjs/common';
-import { Timeout } from '@nestjs/schedule';
+import { Cron, SchedulerRegistry } from '@nestjs/schedule';
 import { AccountService } from 'src/account/account.service';
+import { FETCH_CYCLE_CRON_NAME } from 'src/shared/constants/code-constants';
 
 @Injectable()
 export class TaskService {
-  constructor(private readonly accountService: AccountService) {}
-  @Timeout(1000)
-  async justRun() {
-    console.log('executed after one second');
+  constructor(
+    private readonly accountService: AccountService,
+    private readonly schedulerRegistry: SchedulerRegistry,
+  ) {}
 
-    const data = (await this.accountService.findAllAccounts())[0];
+  @Cron('*/11 * * * * *', {
+    name: FETCH_CYCLE_CRON_NAME,
+  })
+  async handleTask() {
+    const job = this.schedulerRegistry.getCronJob(FETCH_CYCLE_CRON_NAME);
+    // execute
   }
 }
