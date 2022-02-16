@@ -1,0 +1,1 @@
+export const FETCH_CYCLE_CRON_NAME = 'FETCH_CYCLE';
