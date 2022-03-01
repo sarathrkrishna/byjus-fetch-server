@@ -14,7 +14,11 @@ export class AccountService {
     return await this.accountModel.find().exec();
   }
 
-  async updateAccountCollection() {}
+  async updateAccountCollection(accounts: Account[]) {
+    for (const account of accounts) {
+      await this.updateOneAccount(account._id, account);
+    }
+  }
 
   async updateOneAccount(accountId: ObjectId, updateData: Account) {
     return await this.accountModel
