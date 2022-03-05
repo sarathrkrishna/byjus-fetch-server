@@ -1,6 +1,6 @@
-import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document } from 'mongoose';
-import { ObjectId } from 'src/shared/dtos/mongo.dto';
+import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
+import { Document } from "mongoose";
+import { ObjectId } from "src/shared/dtos/mongo.dto";
 
 export type AccountDocument = Account & Document;
 
@@ -23,6 +23,9 @@ export class Account {
 
   @Prop()
   token: string;
+
+  @Prop()
+  fetchEnabled: boolean;
 }
 
 export const AccountSchema = SchemaFactory.createForClass(Account);
