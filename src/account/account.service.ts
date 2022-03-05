@@ -10,19 +10,23 @@ export class AccountService {
     @InjectModel(Account.name) private accountModel: Model<AccountDocument>
   ) {}
 
-  async fetchAllAccounts(): Promise<Account[]> {
-    return await this.accountModel.find().exec();
+  fetchAllAccounts(): Promise<Account[]> {
+    return this.accountModel.find().exec();
   }
 
-  async updateAccountCollection(accounts: Account[]) {
+  async updateAccounts(accounts: Account[]) {
     for (const account of accounts) {
       await this.updateOneAccount(account._id, account);
     }
   }
 
-  async updateOneAccount(accountId: ObjectId, updateData: Account) {
-    return await this.accountModel
+  updateOneAccount(accountId: ObjectId, updateData: Account) {
+    return this.accountModel
       .findOneAndUpdate({ _id: accountId }, updateData)
       .exec();
+  }
+
+  getAllFetchEnabledAccounts(): Promise<Account[]> {
+    return this.accountModel.find({ fetchEnabled: true }).exec();
   }
 }
