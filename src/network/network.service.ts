@@ -7,6 +7,7 @@ import {
   BYJUS_SIGN_IN_URL,
   DOUBT_ERROR_CODES,
 } from "src/shared/constants/code-constants";
+import { DoubtCheckDto } from "src/tasks/dto/task.dto";
 import { NetworkError } from "./network.error";
 
 @Injectable()
@@ -130,5 +131,45 @@ export class NetworkService {
       },
       params: { q: "pending", sort: "updated_at", direction: "desc" },
     });
+  }
+
+  async handleCheckDoubt(
+    token: string,
+    doubtFetchedHandler: (postId: number) => Promise<DoubtCheckDto>,
+    noDoubtsHandler: () => void,
+    alreadyFetchedHandler: () => DoubtCheckDto,
+    tokenExpiredHandler: () => Promise<void>,
+    tooMuchRequestsHandler: () => Promise<DoubtCheckDto>,
+    invalidTockenHandler: () => Promise<void>,
+    unknownErrorHandler: (error: Error) => void
+  ) {
+    try {
+      const {
+        post: { id },
+      } = (await this.checkAvailableDoubts(token)).data as {
+        post: { id: number };
+      };
+
+      return await doubtFetchedHandler(id);
+    } catch (error) {
+      switch (error.code) {
+        case DOUBT_ERROR_CODES.noDoubts.mapCode:
+          noDoubtsHandler();
+          return undefined;
+        case DOUBT_ERROR_CODES.alreadyFetched.mapCode:
+          return alreadyFetchedHandler();
+        case DOUBT_ERROR_CODES.tokenExp.mapCode:
+          await tokenExpiredHandler();
+          return undefined;
+        case DOUBT_ERROR_CODES.tooMuchReq.mapCode:
+          return await tooMuchRequestsHandler();
+        case DOUBT_ERROR_CODES.invalidTocken.mapCode:
+          await invalidTockenHandler();
+          return undefined;
+        default:
+          unknownErrorHandler(error);
+          return undefined;
+      }
+    }
   }
 }

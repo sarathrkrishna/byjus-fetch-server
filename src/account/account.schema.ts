@@ -26,6 +26,12 @@ export class Account {
 
   @Prop()
   fetchEnabled: boolean;
+
+  @Prop()
+  disableTill: number; // 0 means, not disabled, -1 means disabled for inifinty
+
+  @Prop()
+  disableReason: string;
 }
 
 export const AccountSchema = SchemaFactory.createForClass(Account);
