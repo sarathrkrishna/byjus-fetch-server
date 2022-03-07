@@ -32,3 +32,17 @@ export const DOUBT_ERROR_CODES = {
     mapCode: 400,
   },
 };
+
+export const DISABLED_REASONS = {
+  NONE: "none",
+  QUESTION_FETCHED_HALT: "question_fetched",
+  DOUBT_FETCHED_TEMP_HALT: "doubt_fetched_temp_halt",
+  QUESTION_FETCHED_ALREADY: "question_fetched_already",
+  TOKEN_EXPIRE_RELOGIN_HALT: "token_expire_relogin_halt",
+  TOO_MUCH_REQUESTS: "too_much_requests",
+  TOKEN_INVALID_RELOGIN_HALT: "token_invalid_relogin_halt",
+};
+
+export const TOO_MUCH_REQUESTS_HALT_DELAY = 3600000;
+export const QUESTION_FETCHED_HALT_DELAY = 5000;
+export const DISABLE_TILL_QUESTION_FETCHED_PERIOD = 7200000;
