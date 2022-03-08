@@ -46,3 +46,5 @@ export const DISABLED_REASONS = {
 export const TOO_MUCH_REQUESTS_HALT_DELAY = 3600000;
 export const QUESTION_FETCHED_HALT_DELAY = 5000;
 export const DISABLE_TILL_QUESTION_FETCHED_PERIOD = 7200000;
+
+export const TELE_BOT_BASE_URL = "https://api.telegram.org/";

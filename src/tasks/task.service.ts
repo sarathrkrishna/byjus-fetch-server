@@ -1,10 +1,12 @@
 import { ConsoleLogger, Injectable, Logger } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
 import { Cron, SchedulerRegistry } from "@nestjs/schedule";
 import { CronJob } from "cron";
 import { ObjectId } from "mongoose";
 import { features } from "process";
 import { Account } from "src/account/account.schema";
 import { AccountService } from "src/account/account.service";
+import { ConfigDto } from "src/config/config.dto";
 import { NetworkService } from "src/network/network.service";
 import {
   FETCH_CYCLE_CRON_NAME,
@@ -19,6 +21,7 @@ import {
   delayMs,
   getCurrentLocalTime,
 } from "src/shared/utils/general-utilities";
+import { TeleBotService } from "src/telegram-bot/telebot.services";
 import { DoubtCheckDto, PostDto, QuestionFetchedDto } from "./dto/task.dto";
 
 @Injectable()
@@ -30,7 +33,9 @@ export class TaskService {
   constructor(
     private readonly accountService: AccountService,
     private readonly schedulerRegistry: SchedulerRegistry,
-    private readonly newtworkService: NetworkService
+    private readonly newtworkService: NetworkService,
+    private readonly configService: ConfigService<ConfigDto>,
+    private readonly telebotService: TeleBotService
   ) {}
 
   @Cron(FETCH_CYCLE_CRON_TIME, {
@@ -293,7 +298,10 @@ export class TaskService {
     questionDatas
       .filter((qd) => qd)
       .map(async (qd) => {
-        console.log(qd);
+        await this.telebotService.sendMessageToUser(
+          "922826146",
+          qd.postData[0].description
+        );
       });
   }
 
@@ -418,4 +426,6 @@ export class TaskService {
       await this.syncLocalAccountsToDb([accId]);
     }
   }
+
+  async getUpdateViaWebhook(telToken: string) {}
 }
