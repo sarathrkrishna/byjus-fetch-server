@@ -23,3 +23,5 @@ export class QuestionFetchedDto {
   postData: PostDto[];
   accountId: ObjectId;
 }
+
+export class getUpdateViaWebhookInputDto {}
