@@ -427,5 +427,9 @@ export class TaskService {
     }
   }
 
-  async getUpdateViaWebhook(telToken: string) {}
+  async postUpdateViaWebhook(telToken: string) {}
+
+  getTaskDetails() {
+    return TaskService.accounts;
+  }
 }
