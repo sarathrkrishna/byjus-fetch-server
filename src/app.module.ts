@@ -15,7 +15,11 @@ const NODE_ENV = process.env.NODE_ENV;
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: ".env",
+      envFilePath: NODE_ENV
+        ? NODE_ENV === "heroku-diploy" // set NODE_ENV=heroku-diploy in heroku app (heroku keeps env file as '.env')
+          ? ".env"
+          : `.env.${NODE_ENV}`
+        : ".env",
       load: [configuration], // load the configuration
     }),
     MongooseModule.forRootAsync({
