@@ -45,6 +45,9 @@ export class TaskService {
     this.fetchCycleCronJob = this.schedulerRegistry.getCronJob(
       FETCH_CYCLE_CRON_NAME
     );
+
+    this.fetchCycleCronJob.stop();
+
     // execute
     const time = getCurrentLocalTime();
     this.logger.log(`Fetch running @ ${time}`);
