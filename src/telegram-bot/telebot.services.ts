@@ -54,7 +54,7 @@ export class TeleBotService {
       chatId,
     });
 
-    await this.sendMessageToUser(chatId.toString(), messageText);
+    await this.sendMessageToUser(chatId.toString(), `<b>${messageText}</b>`);
 
     console.log(messageText);
   }
