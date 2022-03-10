@@ -28,6 +28,7 @@ import { DoubtCheckDto, PostDto, QuestionFetchedDto } from "./dto/task.dto";
 export class TaskService {
   private logger = new Logger(TaskService.name);
   private fetchCycleCronJob: CronJob;
+  private static execute: boolean = false;
   private static accounts: Account[] = [];
 
   constructor(
@@ -42,12 +43,14 @@ export class TaskService {
     name: FETCH_CYCLE_CRON_NAME,
   })
   async handleTask() {
+    if (!TaskService.execute) {
+      this.logger.log(`No execution. Running empty cron.`);
+      return;
+    }
+
     this.fetchCycleCronJob = this.schedulerRegistry.getCronJob(
       FETCH_CYCLE_CRON_NAME
     );
-
-    this.fetchCycleCronJob.stop();
-
     // execute
     const time = getCurrentLocalTime();
     this.logger.log(`Fetch running @ ${time}`);
@@ -266,15 +269,17 @@ export class TaskService {
             accountId: fetcheable.accountId,
           };
 
+          const maxCanAnswerTill = questionFetched.postData.reduce(
+            // return the furthest disable time from the available posts
+            (acc, post) =>
+              acc < post.can_answer_till ? post.can_answer_till : acc,
+            0
+          );
+
           // disable account for 3 Hrs
           await this.disableTillAccountSyncToDb(
             fetcheable.accountId,
-            questionFetched.postData.reduce(
-              // return the furthest disable time from the available posts
-              (acc, post) =>
-                acc < post.can_answer_till ? post.can_answer_till : acc,
-              0
-            ),
+            maxCanAnswerTill,
             fetcheable.status === "already_fetched"
               ? DISABLED_REASONS.QUESTION_FETCHED_ALREADY
               : DISABLED_REASONS.QUESTION_FETCHED_HALT
@@ -297,6 +302,8 @@ export class TaskService {
         }
       })
     );
+
+    // disable account
 
     questionDatas
       .filter((qd) => qd)
@@ -413,14 +420,13 @@ export class TaskService {
 
   async disableTillAccountSyncToDb(
     accId: ObjectId,
-    disableTill: number | null,
+    disableTill: number,
     disableReason: string,
     upSync = true
   ) {
     const account = TaskService.accounts.find((acc) => acc._id === accId);
-    if (disableTill) {
-      account.disableTill = disableTill;
-    }
+
+    account.disableTill = disableTill;
     account.disableReason = disableReason;
 
     this.updateLocalAccounts([account]);
