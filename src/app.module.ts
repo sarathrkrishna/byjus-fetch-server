@@ -6,7 +6,6 @@ import { TaskModule } from "./tasks/task.module";
 import { ConfigDto } from "./config/config.dto";
 import { NetworkModule } from "./network/network.module";
 import { TeleBotModule } from "./telegram-bot/telebot.module";
-import { AppController } from "./app.controller";
 import { AppService } from "./app.service";
 
 const NODE_ENV = process.env.NODE_ENV;
@@ -33,7 +32,7 @@ const NODE_ENV = process.env.NODE_ENV;
     NetworkModule,
     TeleBotModule,
   ],
-  controllers: [AppController],
+  controllers: [],
   providers: [AppService],
 })
 export class AppModule {}
