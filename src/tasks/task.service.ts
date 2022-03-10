@@ -45,9 +45,6 @@ export class TaskService {
     this.fetchCycleCronJob = this.schedulerRegistry.getCronJob(
       FETCH_CYCLE_CRON_NAME
     );
-
-    this.fetchCycleCronJob.stop();
-
     // execute
     const time = getCurrentLocalTime();
     this.logger.log(`Fetch running @ ${time}`);
@@ -298,6 +295,8 @@ export class TaskService {
       })
     );
 
+    // disable account
+
     questionDatas
       .filter((qd) => qd)
       .map(async (qd) => {
@@ -418,7 +417,7 @@ export class TaskService {
     upSync = true
   ) {
     const account = TaskService.accounts.find((acc) => acc._id === accId);
-    if (disableTill) {
+    if (disableTill === undefined) {
       account.disableTill = disableTill;
     }
     account.disableReason = disableReason;
