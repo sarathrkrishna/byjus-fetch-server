@@ -44,6 +44,7 @@ export class TaskService {
   })
   async handleTask() {
     if (!TaskService.execute) {
+      this.logger.log(`No execution. Running empty cron.`);
       return;
     }
 
