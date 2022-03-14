@@ -1,12 +1,7 @@
-import { ConsoleLogger, Injectable, Logger } from "@nestjs/common";
-import { ConfigService } from "@nestjs/config";
+import { Injectable, Logger } from "@nestjs/common";
 import { Cron, SchedulerRegistry } from "@nestjs/schedule";
 import { CronJob } from "cron";
-import { ObjectId } from "mongoose";
-import { features } from "process";
-import { Account } from "src/account/account.schema";
 import { AccountService } from "src/account/account.service";
-import { ConfigDto } from "src/config/config.dto";
 import { NetworkService } from "src/network/network.service";
 import {
   FETCH_CYCLE_CRON_NAME,
@@ -14,7 +9,7 @@ import {
   DISABLED_REASONS,
   TOO_MUCH_REQUESTS_HALT_DELAY,
   QUESTION_FETCHED_HALT_DELAY,
-  DISABLE_TILL_QUESTION_FETCHED_PERIOD,
+  TELE_NOTIFY_CODES,
 } from "src/shared/constants/code-constants";
 import {
   createAccountSpecificLog,
@@ -28,14 +23,12 @@ import { DoubtCheckDto, PostDto, QuestionFetchedDto } from "./dto/task.dto";
 export class TaskService {
   private logger = new Logger(TaskService.name);
   private fetchCycleCronJob: CronJob;
-  private static execute: boolean = false;
-  private static accounts: Account[] = [];
+  private static execute: boolean = true;
 
   constructor(
     private readonly accountService: AccountService,
     private readonly schedulerRegistry: SchedulerRegistry,
     private readonly newtworkService: NetworkService,
-    private readonly configService: ConfigService<ConfigDto>,
     private readonly telebotService: TeleBotService
   ) {}
 
@@ -55,15 +48,16 @@ export class TaskService {
     const time = getCurrentLocalTime();
     this.logger.log(`Fetch running @ ${time}`);
 
-    if (!TaskService.accounts.length) {
+    if (!this.accountService.fetchLocalAccounts().length) {
       // if local accounts list is not occupied
       this.logger.error(`Empty accounts list, executing accounts init...`);
       // fetch accounts from db
       try {
-        await this.syncDbAccountsToLocal();
+        await this.accountService.syncDbAccountsToLocal();
         // display downsynced users
         this.logger.log(
-          `Down-synced accounts: \n ${TaskService.accounts
+          `Down-synced accounts: \n ${this.accountService
+            .fetchLocalAccounts()
             .map((acc) => `${acc.username} ${acc.fullName}`)
             .join("  ")}`
         );
@@ -76,7 +70,7 @@ export class TaskService {
 
     const whiteListedAccounts = (
       await Promise.all(
-        TaskService.accounts.map(async (acc) => {
+        this.accountService.fetchLocalAccounts().map(async (acc) => {
           if (acc.fetchEnabled) {
             if (acc.disableTill === 0) {
               return acc;
@@ -85,7 +79,7 @@ export class TaskService {
             } else if (acc.disableTill < new Date().getTime()) {
               // enable account by setting disableTill = 0
               this.logger.debug(createAccountSpecificLog(acc, "Enabling user"));
-              await this.disableTillAccountSyncToDb(
+              await this.accountService.disableTillAccountSyncToDb(
                 acc._id,
                 0,
                 DISABLED_REASONS.NONE
@@ -124,7 +118,7 @@ export class TaskService {
                 )
               );
               // halt till the cross check finishes
-              await this.disableTillAccountSyncToDb(
+              await this.accountService.disableTillAccountSyncToDb(
                 acc._id,
                 -1,
                 DISABLED_REASONS.DOUBT_FETCHED_TEMP_HALT,
@@ -174,14 +168,14 @@ export class TaskService {
                   "Token expired, logging in again."
                 )
               );
-              await this.disableTillAccountSyncToDb(
+              await this.accountService.disableTillAccountSyncToDb(
                 acc._id,
                 -1,
                 DISABLED_REASONS.TOKEN_EXPIRE_RELOGIN_HALT,
                 false // dont want to sync to db
               );
-              await this.loginAccountsAndSyncToDb([acc._id]);
-              await this.disableTillAccountSyncToDb(
+              await this.accountService.loginAccountsAndSyncToDb([acc._id]);
+              await this.accountService.disableTillAccountSyncToDb(
                 acc._id,
                 0,
                 DISABLED_REASONS.NONE,
@@ -190,14 +184,12 @@ export class TaskService {
             },
             async () => {
               // tooMuchRequestsHandler
-              this.logger.error(
-                createAccountSpecificLog(
-                  acc,
-                  "Too much requests, disabled for 1 Hr."
-                )
-              );
+              const errorTxt = "Too much requests, disabled for 1 Hr.";
+              this.logger.error(createAccountSpecificLog(acc, errorTxt));
 
-              await this.disableTillAccountSyncToDb(
+              await this.telebotService.informToomuchRequestsError(acc._id);
+
+              await this.accountService.disableTillAccountSyncToDb(
                 acc._id,
                 new Date().getTime() + TOO_MUCH_REQUESTS_HALT_DELAY,
                 DISABLED_REASONS.TOO_MUCH_REQUESTS
@@ -216,14 +208,14 @@ export class TaskService {
               this.logger.error(
                 createAccountSpecificLog(acc, "Invalid token, loggin in again.")
               );
-              await this.disableTillAccountSyncToDb(
+              await this.accountService.disableTillAccountSyncToDb(
                 acc._id,
                 -1,
                 DISABLED_REASONS.TOKEN_INVALID_RELOGIN_HALT,
                 false // dont want to sync to db
               );
-              await this.loginAccountsAndSyncToDb([acc._id]);
-              await this.disableTillAccountSyncToDb(
+              await this.accountService.loginAccountsAndSyncToDb([acc._id]);
+              await this.accountService.disableTillAccountSyncToDb(
                 acc._id,
                 0,
                 DISABLED_REASONS.NONE,
@@ -250,9 +242,9 @@ export class TaskService {
     const questionDatas = (
       await Promise.all(
         fetcheableDoubts.map(async (fetcheable) => {
-          const account = TaskService.accounts.find(
-            (acc) => acc._id === fetcheable.accountId
-          );
+          const account = this.accountService
+            .fetchLocalAccounts()
+            .find((acc) => acc._id === fetcheable.accountId);
 
           if (fetcheable.status !== "already_fetched") {
             // wait for 5 seconds and then fetch
@@ -302,7 +294,7 @@ export class TaskService {
 
             // disable account for 2 Hrs
             try {
-              await this.disableTillAccountSyncToDb(
+              await this.accountService.disableTillAccountSyncToDb(
                 fetcheable.accountId,
                 parseInt(String(maxCanAnswerTill) + "000"),
                 fetcheable.status === "already_fetched"
@@ -319,7 +311,7 @@ export class TaskService {
               createAccountSpecificLog(account, `Empty post. Rebounding.`)
             );
 
-            await this.disableTillAccountSyncToDb(
+            await this.accountService.disableTillAccountSyncToDb(
               fetcheable.accountId,
               0,
               DISABLED_REASONS.NONE,
@@ -332,152 +324,8 @@ export class TaskService {
       )
     ).filter((v) => !!v);
 
-    console.log(questionDatas);
-
-    // disable account
-
-    // questionDatas
-    //   .filter((qd) => qd)
-    //   .map(async (qd) => {
-    //     try {
-    //       await this.telebotService.sendMessageToUser(
-    //         "922826146",
-    //         qd.postData[0].description
-    //       );
-    //     } catch (error) {
-    //       console.log("error at telegram message", error);
-    //     }
-    //   });
-  }
-
-  // to sync db account data to local
-  async syncDbAccountsToLocal() {
-    const enabledAccounts =
-      await this.accountService.getAllFetchEnabledAccounts();
-
-    if (!enabledAccounts.length) {
-      throw new Error(
-        "Database contains no account data, or all accounts are disabled"
-      );
+    for (const qd of questionDatas) {
+      await this.telebotService.informQuestionAvailability(qd);
     }
-
-    TaskService.accounts = enabledAccounts;
-  }
-
-  // sync local data to db
-  syncLocalAccountsToDb(accIds: ObjectId[] = [], exempt: ObjectId[] = []) {
-    let accounts: Account[] = [];
-
-    if (accIds.length) {
-      accounts = TaskService.accounts.filter(
-        (acc) => accIds.findIndex((id) => id === acc._id) !== -1
-      );
-    } else {
-      // if acc not provided, then all local accounts are selected
-      accounts = TaskService.accounts;
-    }
-
-    const whiteListedAccounts = accounts.filter(
-      (acc) => !exempt.find((e) => e === acc._id)
-    );
-    return this.accountService.updateAccounts(whiteListedAccounts);
-  }
-
-  // login some/all users - local and db sync
-  async loginAccountsAndSyncToDb(
-    accIds: ObjectId[] = [],
-    exempt: ObjectId[] = []
-  ) {
-    let accounts: Account[] = [];
-
-    if (accIds.length) {
-      accounts = TaskService.accounts.filter(
-        (acc) => accIds.findIndex((id) => id === acc._id) !== -1
-      );
-    } else {
-      // if acc not provided, then all local accounts are selected
-      accounts = TaskService.accounts;
-    }
-
-    if (!accounts.length) {
-      throw new Error(`Accounts list is empty, unable to login`);
-    }
-
-    const whiteListedAccounts = accounts.filter(
-      (acc) => !exempt.find((e) => e === acc._id)
-    );
-
-    const loggedInAccounts = [];
-
-    for (const acc of whiteListedAccounts) {
-      try {
-        const { token } = (await this.newtworkService.loginAccount(
-          acc.username,
-          acc.password
-        )) as { username: string; token: string };
-        acc.lastLogin = new Date().getTime();
-        acc.token = token;
-
-        loggedInAccounts.push(acc);
-      } catch (error) {
-        this.logger.error(
-          `Something went wrong while logging in [${acc.username} ${acc.fullName}]: ${error}`
-        );
-      }
-    }
-    // update local and sync to db
-    this.updateLocalAccounts(loggedInAccounts, false);
-    await this.syncLocalAccountsToDb();
-  }
-
-  // update local accounts
-  updateLocalAccounts(accounts: any[], upsert = false) {
-    TaskService.accounts = [
-      ...TaskService.accounts.filter(
-        (acc) => !accounts.find((ac) => ac._id === acc._id)
-      ),
-      ...accounts
-        .map((acc) => {
-          let account = TaskService.accounts.find((a) => a._id === acc._id);
-          if (!account) {
-            if (upsert) {
-              account = new Account();
-            } else {
-              return;
-            }
-          }
-          for (let key in acc) {
-            account[key] = acc[key];
-          }
-          return account;
-        })
-        .filter((acc) => acc),
-    ] as Account[];
-  }
-
-  async disableTillAccountSyncToDb(
-    accId: ObjectId,
-    disableTill: number,
-    disableReason: string,
-    upSync = true
-  ) {
-    const account = TaskService.accounts.find((acc) => acc._id === accId);
-
-    account.disableTill = disableTill;
-    account.disableReason = disableReason;
-
-    this.updateLocalAccounts([account]);
-
-    if (upSync) {
-      await this.syncLocalAccountsToDb([accId]);
-    }
-  }
-
-  async postUpdateViaWebhook(telToken: string) {
-    console.log(telToken);
-  }
-
-  getTaskDetails() {
-    return TaskService.accounts;
   }
 }

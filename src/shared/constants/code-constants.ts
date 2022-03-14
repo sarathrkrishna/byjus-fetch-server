@@ -48,3 +48,9 @@ export const QUESTION_FETCHED_HALT_DELAY = 5000;
 export const DISABLE_TILL_QUESTION_FETCHED_PERIOD = 7200000;
 
 export const TELE_BOT_BASE_URL = "https://api.telegram.org/";
+
+export const TELE_NOTIFY_CODES = {
+  ERROR: "error",
+  INFO: "info",
+  WARN: "warn",
+};

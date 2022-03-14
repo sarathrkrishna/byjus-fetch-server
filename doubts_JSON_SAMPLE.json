@@ -90,3 +90,30 @@ syncLocalAccountsToDb(accIds: ObjectId[] = [], exempt: ObjectId[] = []) {
     );
     return this.accountService.updateAccounts(whiteListedAccounts);
   }
+
+  // webhook body
+
+{
+  "update_id": 172697093,
+  "message": {
+    "message_id": 54,
+    "from": {
+      "id": 922826146,
+      "is_bot": false,
+      "first_name": "Sarath",
+      "last_name": "Ar",
+      "username": "sark98",
+      "language_code": "en"
+    },
+    "chat": {
+      "id": 922826146,
+      "first_name": "Sarath",
+      "last_name": "Ar",
+      "username": "sark98",
+      "type": "private"
+    },
+    "date": 1647250217,
+    "text": "/hello",
+    "entities": [{ "offset": 0, "length": 6, "type": "bot_command" }]
+  }
+}
