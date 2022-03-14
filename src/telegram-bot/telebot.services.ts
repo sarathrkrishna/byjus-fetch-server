@@ -1,12 +1,14 @@
 import { Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import axios, { AxiosInstance } from "axios";
+import { ObjectId } from "src/shared/dtos/mongo.dto";
 import { AccountService } from "src/account/account.service";
 import { AccountUserMasterService } from "src/account_user_master/acccount.user.master.service";
 import { ConfigDto } from "src/config/config.dto";
 import {
   DISABLED_REASONS,
   TELE_BOT_BASE_URL,
+  TELE_NOTIFY_CODES,
 } from "src/shared/constants/code-constants";
 import { QuestionFetchedDto } from "src/tasks/dto/task.dto";
 import { TaskService } from "src/tasks/task.service";
@@ -23,7 +25,9 @@ import {
   listAccountsText,
   newUserSubscribeText,
   qidNotFoundErrorText,
+  questionMetaText,
   restartAccountText,
+  tooMuchRequestsError,
   userAlreadySubscribedText,
   warnNotifyText,
 } from "./texts/telebot.texts";
@@ -42,15 +46,14 @@ export class TeleBotService {
     private readonly configService: ConfigService<ConfigDto>,
     private readonly userService: UserService,
     private readonly accountService: AccountService,
-    private readonly accountUserMasterService: AccountUserMasterService,
-    private readonly taskService: TaskService
+    private readonly accountUserMasterService: AccountUserMasterService
   ) {}
 
-  sendMessageToUser(chatId: string, text = "") {
+  sendMessageToUser(chatId: string, text = "", parseAsHtml = true) {
     return this.teleAxiosClient.post("/sendMessage", {
       chat_id: chatId,
       text,
-      parse_mode: "HTML",
+      parse_mode: parseAsHtml ? "HTML" : undefined,
     });
   }
 
@@ -131,11 +134,10 @@ export class TeleBotService {
           });
 
         const localAccounts = accUsrMstrList
-          .map((aum) => TaskService.findAnAccountById(aum.accountId))
+          .map((aum) => this.accountService.findLocalAccountById(aum.accountId))
           .filter((v) => !!v);
 
         if (text.match(/^\/la$/gi)) {
-          console.log(text);
           await this.sendMessageToUser(
             chatId.toString(),
             listAccountsText(localAccounts)
@@ -154,7 +156,7 @@ export class TeleBotService {
                 cannotEnableDueToTooMuchRequestError
               );
             } else {
-              this.taskService.updateLocalAccounts([
+              this.accountService.updateLocalAccounts([
                 {
                   _id: account._id,
                   disableTill: 0,
@@ -162,7 +164,7 @@ export class TeleBotService {
                 },
               ]);
 
-              await this.taskService.syncLocalAccountsToDb([account._id]);
+              await this.accountService.syncLocalAccountsToDb([account._id]);
 
               await this.sendMessageToUser(
                 chatId.toString(),
@@ -170,7 +172,7 @@ export class TeleBotService {
               );
             }
           } else {
-            this.taskService.updateLocalAccounts([
+            this.accountService.updateLocalAccounts([
               {
                 _id: account._id,
                 fetchEnabled: (() => {
@@ -183,7 +185,7 @@ export class TeleBotService {
                 })(),
               },
             ]);
-            await this.taskService.syncLocalAccountsToDb([account._id]);
+            await this.accountService.syncLocalAccountsToDb([account._id]);
 
             await this.sendMessageToUser(
               chatId.toString(),
@@ -198,15 +200,75 @@ export class TeleBotService {
     }
   }
 
-  async informQuestionAvailability(questionData: QuestionFetchedDto) {}
+  async informQuestionAvailability(questionData: QuestionFetchedDto) {
+    const { accountId, postData } = questionData;
+    const account = this.accountService.findLocalAccountById(accountId);
+
+    const accUsrMstrList =
+      await this.accountUserMasterService.findAccountUserMasters({
+        accountId: account._id,
+      });
+
+    const users = (await Promise.all(
+      accUsrMstrList.map(
+        async (aum) =>
+          (
+            await this.userService.findUser({
+              _id: aum.userId,
+            })
+          )[0]
+      )
+    )) as User[];
+
+    for (const user of users) {
+      for (const post of postData) {
+        await this.notifyTelegram(
+          questionMetaText(post),
+          TELE_NOTIFY_CODES.INFO,
+          user.chatId,
+          account.nickName
+        );
+        await this.sendMessageToUser(user.chatId, post.description, false);
+      }
+    }
+  }
+
+  async informToomuchRequestsError(accountId: ObjectId) {
+    const account = this.accountService.findLocalAccountById(accountId);
+
+    const accUsrMstrList =
+      await this.accountUserMasterService.findAccountUserMasters({
+        accountId: account._id,
+      });
+
+    const users = (await Promise.all(
+      accUsrMstrList.map(
+        async (aum) =>
+          (
+            await this.userService.findUser({
+              _id: aum.userId,
+            })
+          )[0]
+      )
+    )) as User[];
+
+    for (const user of users) {
+      await this.notifyTelegram(
+        tooMuchRequestsError,
+        TELE_NOTIFY_CODES.ERROR,
+        user.chatId,
+        account.nickName
+      );
+    }
+  }
 
   notifyTelegram(text: string, code: string, chatId: string, nickName: string) {
     switch (code) {
-      case "error":
+      case TELE_NOTIFY_CODES.ERROR:
         return this.sendMessageToUser(chatId, errorNotifyText(text, nickName));
-      case "info":
+      case TELE_NOTIFY_CODES.INFO:
         return this.sendMessageToUser(chatId, infoNotifyText(text, nickName));
-      case "warn":
+      case TELE_NOTIFY_CODES.WARN:
         return this.sendMessageToUser(chatId, warnNotifyText(text, nickName));
     }
   }

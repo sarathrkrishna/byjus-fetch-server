@@ -7,12 +7,7 @@ import { TeleBotController } from "./telebot.controller";
 import { TeleBotService } from "./telebot.services";
 
 @Module({
-  imports: [
-    UserModule,
-    AccountModule,
-    AccountUserMasterModule,
-    forwardRef(() => TaskModule),
-  ],
+  imports: [UserModule, AccountModule, AccountUserMasterModule],
   providers: [TeleBotService],
   exports: [TeleBotService],
   controllers: [TeleBotController],
