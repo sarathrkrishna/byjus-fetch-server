@@ -7,6 +7,7 @@ import { ConfigDto } from "./config/config.dto";
 import { NetworkModule } from "./network/network.module";
 import { TeleBotModule } from "./telegram-bot/telebot.module";
 import { AppService } from "./app.service";
+import { UserModule } from "./user/user.module";
 
 const NODE_ENV = process.env.NODE_ENV;
 
@@ -31,6 +32,7 @@ const NODE_ENV = process.env.NODE_ENV;
     TaskModule,
     NetworkModule,
     TeleBotModule,
+    UserModule,
   ],
   controllers: [],
   providers: [AppService],
