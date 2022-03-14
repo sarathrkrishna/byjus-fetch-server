@@ -7,31 +7,34 @@ export type AccountDocument = Account & Document;
 // accounts collection
 @Schema()
 export class Account {
-  _id: ObjectId;
+  _id?: ObjectId;
 
   @Prop({ required: true })
-  username: string;
+  username?: string;
 
   @Prop({ required: true })
-  fullName: string;
+  fullName?: string;
 
   @Prop({ required: true })
-  password: string;
+  nickName?: string;
 
   @Prop({ required: true })
-  lastLogin: number;
+  password?: string;
 
   @Prop()
-  token: string;
+  lastLogin?: number;
 
   @Prop()
-  fetchEnabled: boolean;
+  token?: string;
 
   @Prop()
-  disableTill: number; // 0 means, not disabled, -1 means disabled for inifinty
+  fetchEnabled?: boolean;
 
   @Prop()
-  disableReason: string;
+  disableTill?: number; // 0 means, not disabled, -1 means disabled for inifinty
+
+  @Prop()
+  disableReason?: string;
 }
 
 export const AccountSchema = SchemaFactory.createForClass(Account);

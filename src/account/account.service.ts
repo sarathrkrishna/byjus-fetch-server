@@ -29,4 +29,11 @@ export class AccountService {
   getAllFetchEnabledAccounts(): Promise<Account[]> {
     return this.accountModel.find({ fetchEnabled: true }).exec();
   }
+
+  findAccounts(doc: Account) {
+    return this.accountModel.find(doc).exec();
+  }
+  createMultipleAccounts(doc: Account[]) {
+    return this.accountModel.create(doc);
+  }
 }

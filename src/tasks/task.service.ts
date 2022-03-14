@@ -28,7 +28,7 @@ import { DoubtCheckDto, PostDto, QuestionFetchedDto } from "./dto/task.dto";
 export class TaskService {
   private logger = new Logger(TaskService.name);
   private fetchCycleCronJob: CronJob;
-  private static execute: boolean = false;
+  private static execute: boolean = true;
   private static accounts: Account[] = [];
 
   constructor(
@@ -69,15 +69,37 @@ export class TaskService {
         );
       } catch (error) {
         this.logger.error(
-          `Something went wrong while syncing db to local: ${error}`
+          `Something went wrong while syncing db to local: ${error.message}`
         );
       }
     }
 
-    // if accounts exists in local
-    const whiteListedAccounts = TaskService.accounts.filter(
-      (acc) => acc.disableTill === 0 && acc.fetchEnabled
-    );
+    const whiteListedAccounts = (
+      await Promise.all(
+        TaskService.accounts.map(async (acc) => {
+          if (acc.fetchEnabled) {
+            if (acc.disableTill === 0) {
+              return acc;
+            } else if (acc.disableTill === -1) {
+              return null;
+            } else if (acc.disableTill < new Date().getTime()) {
+              // enable account by setting disableTill = 0
+              await this.disableTillAccountSyncToDb(
+                acc._id,
+                0,
+                DISABLED_REASONS.NONE
+              );
+
+              return acc;
+            } else {
+              return null;
+            }
+          } else {
+            return null;
+          }
+        })
+      )
+    ).filter((acc) => !!acc);
 
     this.logger.log(
       `Enabled accounts:\n ${whiteListedAccounts
@@ -224,95 +246,107 @@ export class TaskService {
       (dcr) => dcr.status === "available" || dcr.status === "already_fetched"
     );
 
-    const questionDatas = await Promise.all(
-      fetcheableDoubts.map(async (fetcheable) => {
-        const account = TaskService.accounts.find(
-          (acc) => acc._id === fetcheable.accountId
-        );
-
-        if (fetcheable.status !== "already_fetched") {
-          // wait for 5 seconds and then fetch
-          await delayMs(QUESTION_FETCHED_HALT_DELAY);
-        }
-
-        const { posts, meta } = (
-          await this.newtworkService.getDoubtPost(fetcheable.token)
-        ).data as {
-          posts: PostDto[];
-          meta: {
-            current_page: number;
-            total_pages: number;
-            total_count: number;
-          };
-        };
-
-        if (posts.length) {
-          this.logger.debug(
-            createAccountSpecificLog(
-              account,
-              `Question available, solve, submit and enable fetch.`
-            )
+    const questionDatas = (
+      await Promise.all(
+        fetcheableDoubts.map(async (fetcheable) => {
+          const account = TaskService.accounts.find(
+            (acc) => acc._id === fetcheable.accountId
           );
 
-          const questionFetched: QuestionFetchedDto = {
-            postData: posts.map((post) => ({
-              id: post.id,
-              description: post.description,
-              subject_name: post.subject_name,
-              grade: post.grade,
-              total_points: post.total_points,
-              created_at: post.created_at,
-              updated_at: post.updated_at,
-              subject_expert_name: post.subject_expert_name,
-              can_answer_till: post.can_answer_till,
-            })),
-            accountId: fetcheable.accountId,
+          if (fetcheable.status !== "already_fetched") {
+            // wait for 5 seconds and then fetch
+            await delayMs(QUESTION_FETCHED_HALT_DELAY);
+          }
+
+          const { posts, meta } = (
+            await this.newtworkService.getDoubtPost(fetcheable.token)
+          ).data as {
+            posts: PostDto[];
+            meta: {
+              current_page: number;
+              total_pages: number;
+              total_count: number;
+            };
           };
 
-          const maxCanAnswerTill = questionFetched.postData.reduce(
-            // return the furthest disable time from the available posts
-            (acc, post) =>
-              acc < post.can_answer_till ? post.can_answer_till : acc,
-            0
-          );
+          if (posts.length) {
+            this.logger.debug(
+              createAccountSpecificLog(
+                account,
+                `Question available, solve, submit and enable fetch.`
+              )
+            );
 
-          // disable account for 3 Hrs
-          await this.disableTillAccountSyncToDb(
-            fetcheable.accountId,
-            maxCanAnswerTill,
-            fetcheable.status === "already_fetched"
-              ? DISABLED_REASONS.QUESTION_FETCHED_ALREADY
-              : DISABLED_REASONS.QUESTION_FETCHED_HALT
-          );
+            const questionFetched: QuestionFetchedDto = {
+              postData: posts.map((post) => ({
+                id: post.id,
+                description: post.description,
+                subject_name: post.subject_name,
+                grade: post.grade,
+                total_points: post.total_points,
+                created_at: post.created_at,
+                updated_at: post.updated_at,
+                subject_expert_name: post.subject_expert_name,
+                can_answer_till: post.can_answer_till,
+              })),
+              accountId: fetcheable.accountId,
+            };
 
-          return questionFetched;
-        } else {
-          this.logger.debug(
-            createAccountSpecificLog(account, `Empty post. Rebounding.`)
-          );
+            const maxCanAnswerTill = questionFetched.postData.reduce(
+              // return the furthest disable time from the available posts
+              (acc, post) =>
+                acc < post.can_answer_till ? post.can_answer_till : acc,
+              0
+            );
 
-          await this.disableTillAccountSyncToDb(
-            fetcheable.accountId,
-            0,
-            DISABLED_REASONS.NONE,
-            false // dont want to sync to db
-          );
+            // disable account for 2 Hrs
+            try {
+              await this.disableTillAccountSyncToDb(
+                fetcheable.accountId,
+                parseInt(String(maxCanAnswerTill) + "000"),
+                fetcheable.status === "already_fetched"
+                  ? DISABLED_REASONS.QUESTION_FETCHED_ALREADY
+                  : DISABLED_REASONS.QUESTION_FETCHED_HALT
+              );
+            } catch (error) {
+              console.log("error at disable til");
+            }
 
-          return undefined;
-        }
-      })
-    );
+            return questionFetched;
+          } else {
+            this.logger.debug(
+              createAccountSpecificLog(account, `Empty post. Rebounding.`)
+            );
+
+            await this.disableTillAccountSyncToDb(
+              fetcheable.accountId,
+              0,
+              DISABLED_REASONS.NONE,
+              false // dont want to sync to db
+            );
+
+            return undefined;
+          }
+        })
+      )
+    ).filter((v) => !!v);
+
+    console.log(questionDatas);
 
     // disable account
 
-    questionDatas
-      .filter((qd) => qd)
-      .map(async (qd) => {
-        await this.telebotService.sendMessageToUser(
-          "922826146",
-          qd.postData[0].description
-        );
-      });
+    // questionDatas
+    //   .filter((qd) => qd)
+    //   .map(async (qd) => {
+    //     try {
+    //       await this.telebotService.sendMessageToUser(
+    //         "922826146",
+    //         qd.postData[0].description
+    //       );
+    //     } catch (error) {
+    //       console.log("error at telegram message", error);
+    //     }
+    //   });
   }
 
   // to sync db account data to local
@@ -321,7 +355,9 @@ export class TaskService {
       await this.accountService.getAllFetchEnabledAccounts();
 
     if (!enabledAccounts.length) {
-      throw new Error("Database contains no account data");
+      throw new Error(
+        "Database contains no account data, or all accounts are disabled"
+      );
     }
 
     TaskService.accounts = enabledAccounts;
