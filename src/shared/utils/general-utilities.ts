@@ -7,6 +7,9 @@ export const getCurrentLocalTime = (timeZone?: string) =>
     timeZone: timeZone || DEF_TIMEZONE,
   });
 
+export const getLocalTimeFromStamp = (stamp: number, timeZone?: string) =>
+  new Date(stamp);
+
 export const delayMs = async (delayInMs: number) =>
   new Promise((resolve) => {
     setTimeout(resolve, delayInMs);

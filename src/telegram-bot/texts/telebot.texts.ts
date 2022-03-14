@@ -1,5 +1,7 @@
 import { stat } from "fs";
 import { Account } from "src/account/account.schema";
+import { getLocalTimeFromStamp } from "src/shared/utils/general-utilities";
+import { PostDto } from "src/tasks/dto/task.dto";
 
 export const userAlreadySubscribedText = (fullName: string) => `
 You are already subscribed as ${fullName}.
@@ -57,14 +59,23 @@ Cannot restart the account as the account was disabled due to too much requests 
 
 export const errorNotifyText = (text: string, nickName: string) => `
 <b>[ERROR]: ${nickName}</b>
-${text}.
+${text}
 `;
 export const infoNotifyText = (text: string, nickName: string) => `
 <b>[INFO]: ${nickName}</b>
-${text}.
+${text}
 `;
 
 export const warnNotifyText = (text: string, nickName: string) => `
 <b>[WARN]: ${nickName}</b>
-${text}.
+${text}
 `;
+
+export const questionMetaText = (post: PostDto) => `
+Question Id: ${post.id}
+Subject: ${post.subject_name}
+Points: ${post.total_points}
+Available Till: ${post.can_answer_till}
+`;
+
+export const tooMuchRequestsError = `Too much requests, disabled for 1 Hr.`;

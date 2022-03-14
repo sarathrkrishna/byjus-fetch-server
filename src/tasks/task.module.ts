@@ -6,7 +6,12 @@ import { TeleBotModule } from "src/telegram-bot/telebot.module";
 import { TaskService } from "./task.service";
 
 @Module({
-  imports: [ScheduleModule.forRoot(), AccountModule, NetworkModule],
+  imports: [
+    ScheduleModule.forRoot(),
+    AccountModule,
+    NetworkModule,
+    TeleBotModule,
+  ],
   providers: [TaskService],
   controllers: [],
   exports: [TaskService],
