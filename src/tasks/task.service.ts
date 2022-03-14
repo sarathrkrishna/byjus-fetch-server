@@ -28,7 +28,7 @@ import { DoubtCheckDto, PostDto, QuestionFetchedDto } from "./dto/task.dto";
 export class TaskService {
   private logger = new Logger(TaskService.name);
   private fetchCycleCronJob: CronJob;
-  private static execute: boolean = true;
+  private static execute: boolean = false;
   private static accounts: Account[] = [];
 
   constructor(
@@ -84,6 +84,7 @@ export class TaskService {
               return null;
             } else if (acc.disableTill < new Date().getTime()) {
               // enable account by setting disableTill = 0
+              this.logger.debug(createAccountSpecificLog(acc, "Enabling user"));
               await this.disableTillAccountSyncToDb(
                 acc._id,
                 0,

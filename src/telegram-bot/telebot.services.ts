@@ -45,17 +45,25 @@ export class TeleBotService {
       },
     } = body;
 
-    const messageText = JSON.stringify({
-      text,
-      date,
-      firstName,
-      lastName,
-      username,
-      chatId,
-    });
+    if (text.match(/^\/start$/gi)) {
+      // chat initiation
+      await this.sendMessageToUser(
+        chatId.toString(),
+        `Welcome user.\n Please subscribe by sending\n \\start`
+      );
+    }
 
-    await this.sendMessageToUser(chatId.toString(), `<b>${messageText}</b>`);
+    // const messageText = JSON.stringify({
+    //   text,
+    //   date,
+    //   firstName,
+    //   lastName,
+    //   username,
+    //   chatId,
+    // });
 
-    console.log(messageText);
+    // await this.sendMessageToUser(chatId.toString(), `<b>${messageText}</b>`);
+
+    // console.log(messageText);
   }
 }
