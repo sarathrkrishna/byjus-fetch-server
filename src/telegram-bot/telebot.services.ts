@@ -45,12 +45,10 @@ export class TeleBotService {
       },
     } = body;
 
+    console.log(JSON.stringify(body));
+
     if (text.match(/^\/start$/gi)) {
       // chat initiation
-      await this.sendMessageToUser(
-        chatId.toString(),
-        `Welcome user.\n Please subscribe by sending\n \\start`
-      );
     }
 
     // const messageText = JSON.stringify({
