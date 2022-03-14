@@ -105,4 +105,7 @@ export class UserService {
   createMultipleUsers(doc: User[]) {
     return this.userModel.create(doc);
   }
+  updateUser(doc: User) {
+    return this.userModel.findOneAndUpdate({ _id: doc._id }, doc).exec();
+  }
 }

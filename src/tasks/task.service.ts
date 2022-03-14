@@ -1,9 +1,8 @@
-import { ConsoleLogger, Injectable, Logger } from "@nestjs/common";
+import { Injectable, Logger } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { Cron, SchedulerRegistry } from "@nestjs/schedule";
 import { CronJob } from "cron";
 import { ObjectId } from "mongoose";
-import { features } from "process";
 import { Account } from "src/account/account.schema";
 import { AccountService } from "src/account/account.service";
 import { ConfigDto } from "src/config/config.dto";
@@ -21,22 +20,20 @@ import {
   delayMs,
   getCurrentLocalTime,
 } from "src/shared/utils/general-utilities";
-import { TeleBotService } from "src/telegram-bot/telebot.services";
 import { DoubtCheckDto, PostDto, QuestionFetchedDto } from "./dto/task.dto";
 
 @Injectable()
 export class TaskService {
   private logger = new Logger(TaskService.name);
   private fetchCycleCronJob: CronJob;
-  private static execute: boolean = false;
-  private static accounts: Account[] = [];
+  private static execute: boolean = true;
+  static accounts: Account[] = [];
 
   constructor(
     private readonly accountService: AccountService,
     private readonly schedulerRegistry: SchedulerRegistry,
     private readonly newtworkService: NetworkService,
-    private readonly configService: ConfigService<ConfigDto>,
-    private readonly telebotService: TeleBotService
+    private readonly configService: ConfigService<ConfigDto>
   ) {}
 
   @Cron(FETCH_CYCLE_CRON_TIME, {
@@ -332,28 +329,14 @@ export class TaskService {
       )
     ).filter((v) => !!v);
 
-    console.log(questionDatas);
-
-    // disable account
-
-    // questionDatas
-    //   .filter((qd) => qd)
-    //   .map(async (qd) => {
-    //     try {
-    //       await this.telebotService.sendMessageToUser(
-    //         "922826146",
-    //         qd.postData[0].description
-    //       );
-    //     } catch (error) {
-    //       console.log("error at telegram message", error);
-    //     }
-    //   });
+    for (const qd of questionDatas) {
+      console.log(qd);
+    }
   }
 
   // to sync db account data to local
   async syncDbAccountsToLocal() {
-    const enabledAccounts =
-      await this.accountService.getAllFetchEnabledAccounts();
+    const enabledAccounts = await this.accountService.fetchAllAccounts();
 
     if (!enabledAccounts.length) {
       throw new Error(
@@ -380,6 +363,7 @@ export class TaskService {
     const whiteListedAccounts = accounts.filter(
       (acc) => !exempt.find((e) => e === acc._id)
     );
+
     return this.accountService.updateAccounts(whiteListedAccounts);
   }
 
@@ -431,7 +415,7 @@ export class TaskService {
   }
 
   // update local accounts
-  updateLocalAccounts(accounts: any[], upsert = false) {
+  updateLocalAccounts(accounts: Account[], upsert = false) {
     TaskService.accounts = [
       ...TaskService.accounts.filter(
         (acc) => !accounts.find((ac) => ac._id === acc._id)
@@ -473,11 +457,11 @@ export class TaskService {
     }
   }
 
-  async postUpdateViaWebhook(telToken: string) {
-    console.log(telToken);
+  static fetchLocalAccounts() {
+    return TaskService.accounts;
   }
 
-  getTaskDetails() {
-    return TaskService.accounts;
+  static findAnAccountById(id: ObjectId) {
+    return TaskService.accounts.find((acc) => String(acc._id) === String(id));
   }
 }
