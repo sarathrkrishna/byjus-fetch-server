@@ -13,5 +13,6 @@ import { TaskService } from "./task.service";
     TeleBotModule,
   ],
   providers: [TaskService],
+  controllers: [],
 })
 export class TaskModule {}

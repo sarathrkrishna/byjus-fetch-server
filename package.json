@@ -30,12 +30,13 @@
     "axios": "^0.26.0",
     "form-data": "^4.0.0",
     "mongoose": "^6.2.1",
+    "randomstring": "^1.2.2",
     "reflect-metadata": "^0.1.13",
     "rimraf": "^3.0.2",
     "rxjs": "^7.2.0"
   },
   "devDependencies": {
-    "@nestjs/cli": "^8.0.0",
+    "@nestjs/cli": "^8.2.2",
     "@nestjs/schematics": "^8.0.0",
     "@nestjs/testing": "^8.0.0",
     "@types/cron": "^1.7.3",
