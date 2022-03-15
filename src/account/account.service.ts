@@ -70,11 +70,9 @@ export class AccountService {
     const enabledAccounts = await this.fetchAllAccounts();
 
     if (!enabledAccounts.length) {
-      throw new Error(
-        "Database contains no account data, or all accounts are disabled"
-      );
+      this.accounts = [];
+      return;
     }
-
     this.accounts = enabledAccounts;
   }
 
