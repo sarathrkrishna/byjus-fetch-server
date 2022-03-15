@@ -1,6 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
-import { Model } from "mongoose";
+import { Model, ObjectId } from "mongoose";
 import {
   AccountUserMaster,
   AccountUserMasterDocument,
@@ -17,7 +17,22 @@ export class AccountUserMasterService {
     return this.accountUserMasterModel.find(doc).exec();
   }
 
+  findAccountUserMastersNotUser(accountId: ObjectId, noUserId: ObjectId) {
+    return this.accountUserMasterModel.find({
+      accountId,
+      userId: { $ne: noUserId },
+    });
+  }
+
   createMultipleAccountUserMasters(doc: AccountUserMaster[]) {
     return this.accountUserMasterModel.create(doc);
+  }
+
+  deleteOneAccountUserMaster(doc: AccountUserMaster) {
+    return this.accountUserMasterModel.deleteOne(doc);
+  }
+
+  deleteManyAccountUserMaster(doc: AccountUserMaster) {
+    return this.accountUserMasterModel.deleteMany(doc);
   }
 }
