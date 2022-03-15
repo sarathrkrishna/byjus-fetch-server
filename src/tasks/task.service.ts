@@ -36,7 +36,7 @@ export class TaskService {
     name: FETCH_CYCLE_CRON_NAME,
   })
   async handleTask() {
-    if (!TaskService.execute) {
+    if (!this.accountService.getExecutionStatus()) {
       this.logger.log(`No execution. Running empty cron.`);
       return;
     }
@@ -327,14 +327,15 @@ export class TaskService {
       await this.telebotService.informQuestionAvailability(qd);
     }
   }
+
   async toggleTask(state: "enable" | "disable") {
     switch (state) {
       case "enable":
-        TaskService.execute = true;
+        this.accountService.setExecutionStatus(true);
         await this.accountService.syncDbAccountsToLocal();
         return "enabled all";
       case "disable":
-        TaskService.execute = false;
+        this.accountService.setExecutionStatus(false);
         await this.accountService.syncLocalAccountsToDb();
         return "disabled all";
       default:

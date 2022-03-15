@@ -8,6 +8,7 @@ import { NetworkService } from "src/network/network.service";
 @Injectable()
 export class AccountService {
   private accounts: Account[] = [];
+  private execute: boolean = false;
   private logger = new Logger(AccountService.name);
 
   constructor(
@@ -54,6 +55,14 @@ export class AccountService {
 
   deleteOneAccount(doc: Account) {
     return this.accountModel.deleteOne(doc);
+  }
+
+  getExecutionStatus() {
+    return this.execute;
+  }
+
+  setExecutionStatus(status: boolean) {
+    this.execute = status;
   }
 
   // to sync db account data to local

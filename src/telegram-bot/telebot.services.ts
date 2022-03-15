@@ -26,6 +26,7 @@ import {
   listAccountsText,
   newUserSubscribeText,
   noAccountsToList,
+  nonExecutionText,
   qidNotFoundErrorText,
   questionMetaText,
   restartAccountText,
@@ -134,6 +135,12 @@ export class TeleBotService {
       } else if (text.match(/^\/.+$/g)) {
         // for all slash commands
         // for all cases where the user is subscribed
+
+        if (!this.accountService.getExecutionStatus()) {
+          await this.sendMessageToUser(chatId.toString(), nonExecutionText);
+          return false;
+        }
+
         const [user] = await this.userService.findUser({
           chatId: chatId.toString(),
         });
@@ -158,6 +165,7 @@ export class TeleBotService {
             await this.sendMessageToUser(chatId.toString(), noAccountsToList);
             return false;
           }
+
           await this.sendMessageToUser(
             chatId.toString(),
             listAccountsText(localAccounts)
