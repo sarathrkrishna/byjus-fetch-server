@@ -71,6 +71,7 @@ export class AccountService {
 
     if (!enabledAccounts.length) {
       this.accounts = [];
+      return;
     }
     this.accounts = enabledAccounts;
   }
