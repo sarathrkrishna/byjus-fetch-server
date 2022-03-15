@@ -15,11 +15,13 @@ Please replace the <i>qid</i> with the one that's assigned to you.
 `;
 
 export const helpText = `
-<b>/qid/subscribe</b> To subscribe to the chat bot.
-<b>/qid/unsubscribe</b> To unsubscribe from the chat bot.
-<b>/la</b> To list all connected accounts
-<b>/nickname/(enable|disable)</b> To enable or disable an account.
-<b>/nickname/restart</b> To restart an account after solving doubts.
+* <b>/qid/subscribe</b> To subscribe to the chat bot.
+* <b>/qid/unsubscribe</b> To unsubscribe from the chat bot.
+* <b>/la</b> To list all connected accounts
+* <b>/nickname/(enable|disable)</b> To enable or disable an account.
+* <b>/nickname/restart</b> To restart an account after solving doubts.
+* <b>/ea</b> To enable all connected accounts.
+* <b>/da</b> To disable all connected accounts.
 `;
 
 export const qidNotFoundErrorText = `
@@ -43,7 +45,11 @@ Accounts to which you are linked:\n
   .map(
     (acc) =>
       `${acc.nickName} | ${acc.fullName} | ${
-        acc.disableTill === 0 ? "Running" : `Stopped (${acc.disableReason})`
+        acc.disableTill === 0
+          ? acc.fetchEnabled
+            ? "Running"
+            : "Runnable"
+          : `Stopped (${acc.disableReason})`
       } | ${acc.fetchEnabled ? "Enabled" : "Disabled"}`
   )
   .join("\n")} </pre>
@@ -98,3 +104,5 @@ export const aUserDisabledEnabledAnAccountText = (
       ? `${fullName} enabled the account ${accNickname}. You can disable the account if you like by typing <pre>/${accNickname}/disable</pre>`
       : `${fullName} disabled the account ${accNickname}. You can enable the account if you like by typing <pre>/${accNickname}/enable</pre>`
   }`;
+
+export const nonExecutionText = `Currenty the server is in non execution mode. Contact the support.`;
