@@ -79,6 +79,7 @@ export class TeleBotService {
       } = body;
 
       if (text.match(/^\/start$/gi)) {
+        // /start
         // chat initiation
         const [user] = await this.userService.findUser({
           chatId: chatId.toString(),
@@ -94,8 +95,10 @@ export class TeleBotService {
 
         await this.sendMessageToUser(chatId.toString(), newUserSubscribeText);
       } else if (text.match(/^\/help$/gi)) {
+        // /help
         await this.sendMessageToUser(chatId.toString(), helpText);
       } else if (text.match(/^\/(\d{5})\/(subscribe|unsubscribe)$/gi)) {
+        // /qid/subscribe|unsubscribe
         // /qid/subscribe
         // /qid/unsubscribe
 
@@ -138,11 +141,13 @@ export class TeleBotService {
           .filter((v) => !!v);
 
         if (text.match(/^\/la$/gi)) {
+          // /la
           await this.sendMessageToUser(
             chatId.toString(),
             listAccountsText(localAccounts)
           );
         } else if (text.match(/^\/([a-zA-Z]+)\/(enable|disable|restart)$/gi)) {
+          // /nick-name/enable|disable
           const [, nickName, fetchState] = text.match(
             /^\/([a-zA-Z]+)\/(enable|disable|restart)$/i
           );
