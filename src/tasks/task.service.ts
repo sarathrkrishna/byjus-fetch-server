@@ -1,4 +1,4 @@
-import { Injectable, Logger } from "@nestjs/common";
+import { BadRequestException, Injectable, Logger } from "@nestjs/common";
 import { Cron, SchedulerRegistry } from "@nestjs/schedule";
 import { CronJob } from "cron";
 import { AccountService } from "src/account/account.service";
@@ -97,9 +97,14 @@ export class TaskService {
     ).filter((acc) => !!acc);
 
     this.logger.log(
-      `Enabled accounts:\n ${whiteListedAccounts
+      `\nDown-synced Acc:\n${this.accountService
+        .fetchLocalAccounts()
         .map((acc) => `${acc.username} ${acc.fullName}`)
-        .join("  ")}`
+        .join(" ")}\nEnabled Acc:\n${
+        whiteListedAccounts
+          .map((acc) => `${acc.username} ${acc.fullName}`)
+          .join("  ") || "None"
+      }`
     );
 
     // try doubt check
@@ -121,8 +126,7 @@ export class TaskService {
               await this.accountService.disableTillAccountSyncToDb(
                 acc._id,
                 -1,
-                DISABLED_REASONS.DOUBT_FETCHED_TEMP_HALT,
-                false
+                DISABLED_REASONS.DOUBT_FETCHED_TEMP_HALT
               );
 
               const doubtCheckResult: DoubtCheckDto = {
@@ -171,15 +175,13 @@ export class TaskService {
               await this.accountService.disableTillAccountSyncToDb(
                 acc._id,
                 -1,
-                DISABLED_REASONS.TOKEN_EXPIRE_RELOGIN_HALT,
-                false // dont want to sync to db
+                DISABLED_REASONS.TOKEN_EXPIRE_RELOGIN_HALT
               );
               await this.accountService.loginAccountsAndSyncToDb([acc._id]);
               await this.accountService.disableTillAccountSyncToDb(
                 acc._id,
                 0,
-                DISABLED_REASONS.NONE,
-                false // dont want to sync to db
+                DISABLED_REASONS.NONE
               );
             },
             async () => {
@@ -211,15 +213,13 @@ export class TaskService {
               await this.accountService.disableTillAccountSyncToDb(
                 acc._id,
                 -1,
-                DISABLED_REASONS.TOKEN_INVALID_RELOGIN_HALT,
-                false // dont want to sync to db
+                DISABLED_REASONS.TOKEN_INVALID_RELOGIN_HALT
               );
               await this.accountService.loginAccountsAndSyncToDb([acc._id]);
               await this.accountService.disableTillAccountSyncToDb(
                 acc._id,
                 0,
-                DISABLED_REASONS.NONE,
-                false // dont want to sync to db
+                DISABLED_REASONS.NONE
               );
             },
             (error) => {
@@ -314,8 +314,7 @@ export class TaskService {
             await this.accountService.disableTillAccountSyncToDb(
               fetcheable.accountId,
               0,
-              DISABLED_REASONS.NONE,
-              false // dont want to sync to db
+              DISABLED_REASONS.NONE
             );
 
             return undefined;
@@ -326,6 +325,20 @@ export class TaskService {
 
     for (const qd of questionDatas) {
       await this.telebotService.informQuestionAvailability(qd);
+    }
+  }
+  async toggleTask(state: "enable" | "disable") {
+    switch (state) {
+      case "enable":
+        TaskService.execute = true;
+        await this.accountService.syncDbAccountsToLocal();
+        return "enabled all";
+      case "disable":
+        TaskService.execute = false;
+        await this.accountService.syncLocalAccountsToDb();
+        return "disabled all";
+      default:
+        throw new BadRequestException("Unrecognized command: state=" + state);
     }
   }
 }

@@ -93,6 +93,8 @@ export class UserService {
       })
     );
 
+    await this.accountService.syncDbAccountsToLocal();
+
     return {
       user: newUser,
       accountsConnected: accUsrMasterList.map((aum) => {
@@ -154,6 +156,8 @@ export class UserService {
             fullName: acc.fullName,
             nickName: acc.nickName,
             password: acc.password,
+            disableTill: 0,
+            fetchEnabled: false,
           },
         ]);
 
@@ -165,6 +169,8 @@ export class UserService {
         ]);
       }
     }
+
+    await this.accountService.syncDbAccountsToLocal();
 
     return {
       accounts: await this.fetchUserAccounts(user._id),
@@ -206,6 +212,8 @@ export class UserService {
       })
     );
 
+    await this.accountService.syncDbAccountsToLocal();
+
     return deletedAccounts;
   }
 
@@ -245,6 +253,8 @@ export class UserService {
     await this.accountUserMasterService.deleteManyAccountUserMaster({
       userId: user._id,
     });
+
+    await this.accountService.syncDbAccountsToLocal();
 
     return await this.deleteOneUser({
       _id: user._id,
