@@ -16,6 +16,7 @@ import { User } from "src/user/user.schema";
 import { UserService } from "src/user/user.service";
 import { Update } from "./dtos/telebot.dto";
 import {
+  aUserDisabledEnabledAnAccountText,
   cannotEnableDueToTooMuchRequestError,
   chatIdUpdatedMessageText,
   enableDisableAccoutText,
@@ -24,10 +25,15 @@ import {
   infoNotifyText,
   listAccountsText,
   newUserSubscribeText,
+  noAccountsToList,
   qidNotFoundErrorText,
   questionMetaText,
   restartAccountText,
   tooMuchRequestsError,
+  unknownNickname,
+  unknownUser,
+  unrecognizedCommandText,
+  unrecognizedSlashCommand,
   userAlreadySubscribedText,
   warnNotifyText,
 } from "./texts/telebot.texts";
@@ -68,6 +74,7 @@ export class TeleBotService {
   }
 
   async postUpdateTelegramMessage(teleToken: string, body: Update) {
+    console.log("chatId:", body.message.chat.id);
     try {
       const {
         message: {
@@ -131,6 +138,11 @@ export class TeleBotService {
           chatId: chatId.toString(),
         });
 
+        if (!user) {
+          await this.sendMessageToUser(chatId.toString(), unknownUser);
+          return;
+        }
+
         const accUsrMstrList =
           await this.accountUserMasterService.findAccountUserMasters({
             userId: user._id,
@@ -142,10 +154,84 @@ export class TeleBotService {
 
         if (text.match(/^\/la$/gi)) {
           // /la
+          if (!localAccounts.length) {
+            await this.sendMessageToUser(chatId.toString(), noAccountsToList);
+            return false;
+          }
           await this.sendMessageToUser(
             chatId.toString(),
             listAccountsText(localAccounts)
           );
+        } else if (text.match(/^\/(ea|da)$/gi)) {
+          // /(ea|da) - enable all, disable all
+          const [, state] = text.match(/^\/(ea|da)$/i) as [null, "ea" | "da"];
+
+          const userConnectedAccounts =
+            await this.userService.fetchUserAccounts(user._id);
+
+          for (const acc of userConnectedAccounts) {
+            // const aums =
+            //   await this.accountUserMasterService.findAccountUserMastersNotUser(
+            //     acc._id,
+            //     user._id
+            //   );
+            // for (const aum of aums) {
+            // const [user] = (await this.userService.findUser({
+            //   _id: aum.userId,
+            // })) as User[];
+
+            // await this.sendMessageToUser(
+            //   user.chatId,
+            //   aUserDisabledEnabledAnAccountText(
+            //     user.fullName,
+            //     acc.nickName,
+            //     state
+            //   )
+            // );
+            // }
+
+            if (
+              (state === "ea" && acc.fetchEnabled) ||
+              (state === "da" && !acc.fetchEnabled)
+            ) {
+              return;
+            }
+
+            const aums =
+              await this.accountUserMasterService.findAccountUserMasters({
+                accountId: acc._id,
+              });
+
+            for (const aum of aums) {
+              const [user1] = (await this.userService.findUser({
+                _id: aum.userId,
+              })) as User[];
+
+              await this.sendMessageToUser(
+                user1.chatId,
+                aUserDisabledEnabledAnAccountText(
+                  user1.fullName === user.fullName ? "You" : user1.fullName,
+                  acc.nickName,
+                  state
+                )
+              );
+            }
+
+            switch (state) {
+              case "ea":
+                await this.accountService.updateOneAccount(acc._id, {
+                  fetchEnabled: true,
+                });
+                break;
+              case "da":
+                await this.accountService.updateOneAccount(acc._id, {
+                  fetchEnabled: false,
+                });
+                break;
+            }
+
+            await this.accountService.syncDbAccountsToLocal();
+          }
         } else if (text.match(/^\/([a-zA-Z]+)\/(enable|disable|restart)$/gi)) {
           // /nick-name/enable|disable
           const [, nickName, fetchState] = text.match(
@@ -153,6 +239,10 @@ export class TeleBotService {
           );
 
           const account = localAccounts.find((lc) => lc.nickName === nickName);
+          if (!account) {
+            await this.sendMessageToUser(chatId.toString(), unknownNickname);
+            return false;
+          }
           if (fetchState === "restart") {
             // check if the account was disabled due to too much request error. In that case, unabling is not possible
             if (account.disableReason === DISABLED_REASONS.TOO_MUCH_REQUESTS) {
@@ -197,7 +287,17 @@ export class TeleBotService {
               enableDisableAccoutText(fetchState, account.nickName)
             );
           }
+        } else {
+          await this.sendMessageToUser(
+            chatId.toString(),
+            unrecognizedSlashCommand
+          );
         }
+      } else {
+        await this.sendMessageToUser(
+          chatId.toString(),
+          unrecognizedCommandText
+        );
       }
       return true;
     } catch (error) {
