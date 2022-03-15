@@ -23,7 +23,7 @@ import { DoubtCheckDto, PostDto, QuestionFetchedDto } from "./dto/task.dto";
 export class TaskService {
   private logger = new Logger(TaskService.name);
   private fetchCycleCronJob: CronJob;
-  private static execute: boolean = true;
+  private static execute: boolean = false;
 
   constructor(
     private readonly accountService: AccountService,

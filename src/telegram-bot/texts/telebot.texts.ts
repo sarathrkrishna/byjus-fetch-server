@@ -18,6 +18,8 @@ export const helpText = `
 <b>/qid/subscribe</b> To subscribe to the chat bot.
 <b>/qid/unsubscribe</b> To unsubscribe from the chat bot.
 <b>/la</b> To list all connected accounts
+<b>/nickname/(enable|disable)</b> To enable or disable an account.
+<b>/nickname/restart</b> To restart an account after solving doubts.
 `;
 
 export const qidNotFoundErrorText = `

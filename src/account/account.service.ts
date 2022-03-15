@@ -52,6 +52,10 @@ export class AccountService {
     );
   }
 
+  deleteOneAccount(doc: Account) {
+    return this.accountModel.deleteOne(doc);
+  }
+
   // to sync db account data to local
   async syncDbAccountsToLocal() {
     const enabledAccounts = await this.fetchAllAccounts();
