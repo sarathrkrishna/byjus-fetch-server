@@ -1,6 +1,6 @@
 import { stat } from "fs";
 import { Account } from "src/account/account.schema";
-import { getLocalTimeFromStamp } from "src/shared/utils/general-utilities";
+import { getLocalTimeFromByjusStamp } from "src/shared/utils/general-utilities";
 import { PostDto } from "src/tasks/dto/task.dto";
 
 export const userAlreadySubscribedText = (fullName: string) => `
@@ -38,13 +38,13 @@ Hello ${fullName}. You are ${
 `;
 
 export const listAccountsText = (accs: Account[]) => `
-Accounts to which you are linked:
+Accounts to which you are linked:\n
 <pre>${accs
   .map(
     (acc) =>
       `${acc.nickName} | ${acc.fullName} | ${
         acc.disableTill === 0 ? "Running" : `Stopped (${acc.disableReason})`
-      } | ${acc.fetchEnabled ? "Enabled" : "Disabled"}\n`
+      } | ${acc.fetchEnabled ? "Enabled" : "Disabled"}`
   )
   .join("\n")} </pre>
 `;
@@ -77,7 +77,24 @@ export const questionMetaText = (post: PostDto) => `
 Question Id: ${post.id}
 Subject: ${post.subject_name}
 Points: ${post.total_points}
-Available Till: ${post.can_answer_till}
+Available Till: ${getLocalTimeFromByjusStamp(post.can_answer_till)}
 `;
 
 export const tooMuchRequestsError = `Too much requests, disabled for 1 Hr.`;
+
+export const unrecognizedCommandText = `Unclear, come again?`;
+export const unrecognizedSlashCommand = `Command not recognized, Try again`;
+export const unknownNickname = `Unknown nickname, please recheck`;
+export const noAccountsToList = `No accounts to list now, please try after sometime`;
+export const unknownUser = `Unknown user, please subscribe if you are a user to Byjus Fetch Engine`;
+
+export const aUserDisabledEnabledAnAccountText = (
+  fullName: string,
+  accNickname: string,
+  state: "ea" | "da"
+) =>
+  `${
+    state === "ea"
+      ? `${fullName} enabled the account ${accNickname}. You can disable the account if you like by typing <pre>/${accNickname}/disable</pre>`
+      : `${fullName} disabled the account ${accNickname}. You can enable the account if you like by typing <pre>/${accNickname}/enable</pre>`
+  }`;
