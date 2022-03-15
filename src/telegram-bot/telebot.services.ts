@@ -75,7 +75,6 @@ export class TeleBotService {
   }
 
   async postUpdateTelegramMessage(teleToken: string, body: Update) {
-    console.log("chatId:", body.message.chat.id);
     try {
       const {
         message: {
