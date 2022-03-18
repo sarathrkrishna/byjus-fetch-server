@@ -1,6 +1,8 @@
 import { Injectable } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
 import axios, { AxiosInstance, AxiosRequestConfig } from "axios";
 import * as FormData from "form-data";
+import { ConfigDto } from "src/config/config.dto";
 import {
   BYJUS_AUTH_URL,
   BYJUS_DOUBT_URL,
@@ -15,13 +17,18 @@ export class NetworkService {
   // byjus doubt axios configuration
 
   private byjusDoubtAxiosConfig: AxiosInstance;
+  private selfAxiosConfig: AxiosInstance;
 
-  constructor() {
+  constructor(private readonly configService: ConfigService<ConfigDto>) {
     this.byjusDoubtAxiosConfig = axios.create({
       baseURL: BYJUS_DOUBT_URL,
       headers: {
         ["Content-Type"]: "application/json",
       },
+    });
+
+    this.selfAxiosConfig = axios.create({
+      baseURL: this.configService.get("domain_url"),
     });
   }
 
@@ -171,5 +178,9 @@ export class NetworkService {
           return undefined;
       }
     }
+  }
+
+  pingSelf() {
+    return this.selfAxiosConfig.get("/ping");
   }
 }

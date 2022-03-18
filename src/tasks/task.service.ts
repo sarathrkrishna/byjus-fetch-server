@@ -9,7 +9,6 @@ import {
   DISABLED_REASONS,
   TOO_MUCH_REQUESTS_HALT_DELAY,
   QUESTION_FETCHED_HALT_DELAY,
-  TELE_NOTIFY_CODES,
 } from "src/shared/constants/code-constants";
 import {
   createAccountSpecificLog,
@@ -23,7 +22,6 @@ import { DoubtCheckDto, PostDto, QuestionFetchedDto } from "./dto/task.dto";
 export class TaskService {
   private logger = new Logger(TaskService.name);
   private fetchCycleCronJob: CronJob;
-  private static execute: boolean = false;
 
   constructor(
     private readonly accountService: AccountService,
