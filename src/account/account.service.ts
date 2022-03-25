@@ -8,7 +8,7 @@ import { NetworkService } from "src/network/network.service";
 @Injectable()
 export class AccountService {
   private accounts: Account[] = [];
-  private execute: boolean = false;
+  private execute: boolean = true;
   private logger = new Logger(AccountService.name);
 
   constructor(
