@@ -1,7 +1,6 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { Cron } from "@nestjs/schedule";
-import axios, { AxiosInstance } from "axios";
 import { ConfigDto } from "src/config/config.dto";
 import { NetworkService } from "src/network/network.service";
 import {
@@ -13,10 +12,7 @@ import { getCurrentLocalTime } from "src/shared/utils/general-utilities";
 @Injectable()
 export class PingService {
   private logger = new Logger(PingService.name);
-  constructor(
-    private readonly configService: ConfigService<ConfigDto>,
-    private readonly networkService: NetworkService
-  ) {}
+  constructor(private readonly networkService: NetworkService) {}
 
   @Cron(SERVER_TICK_CRON_TIME, { name: SERVER_TICK_CRON_NAME })
   async regularPing() {
