@@ -16,8 +16,10 @@ import { User } from "src/user/user.schema";
 import { UserService } from "src/user/user.service";
 import { Update } from "./dtos/telebot.dto";
 import {
+  alreadyInTheRequestedState,
   aUserDisabledEnabledAnAccountText,
-  cannotEnableDueToTooMuchRequestError,
+  cannotRestartAlreadyRestarted,
+  cannotRestartDueToTooMuchRequestError,
   chatIdUpdatedMessageText,
   enableDisableAccoutText,
   errorNotifyText,
@@ -255,7 +257,12 @@ export class TeleBotService {
             if (account.disableReason === DISABLED_REASONS.TOO_MUCH_REQUESTS) {
               await this.sendMessageToUser(
                 chatId.toString(),
-                cannotEnableDueToTooMuchRequestError
+                cannotRestartDueToTooMuchRequestError
+              );
+            } else if (account.disableTill === 0) {
+              await this.sendMessageToUser(
+                chatId.toString(),
+                cannotRestartAlreadyRestarted
               );
             } else {
               this.accountService.updateLocalAccounts([
@@ -274,17 +281,25 @@ export class TeleBotService {
               );
             }
           } else {
+            const fetchEnabled = (() => {
+              switch (fetchState) {
+                case "enable":
+                  return true;
+                case "disable":
+                  return false;
+              }
+            })();
+
+            if (fetchEnabled === account.fetchEnabled) {
+              await this.sendMessageToUser(
+                chatId.toString(),
+                alreadyInTheRequestedState
+              );
+            }
             this.accountService.updateLocalAccounts([
               {
                 _id: account._id,
-                fetchEnabled: (() => {
-                  switch (fetchState) {
-                    case "enable":
-                      return true;
-                    case "disable":
-                      return false;
-                  }
-                })(),
+                fetchEnabled: fetchEnabled,
               },
             ]);
             await this.accountService.syncLocalAccountsToDb([account._id]);
