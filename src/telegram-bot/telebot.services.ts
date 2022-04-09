@@ -217,7 +217,7 @@ export class TeleBotService {
               await this.sendMessageToUser(
                 user1.chatId,
                 aUserDisabledEnabledAnAccountText(
-                  user1.fullName === user.fullName ? "You" : user1.fullName,
+                  user1.fullName === user.fullName ? "You" : user.fullName,
                   acc.nickName,
                   state
                 )
@@ -243,7 +243,7 @@ export class TeleBotService {
           // /nick-name/enable|disable
           const [, nickName, fetchState] = text.match(
             /^\/([a-zA-Z]+)\/(enable|disable|restart)$/i
-          );
+          ) as [null, string, "enable" | "disable" | "restart"];
 
           const account = localAccounts.find((lc) => lc.nickName === nickName);
           if (!account) {
@@ -289,10 +289,29 @@ export class TeleBotService {
             ]);
             await this.accountService.syncLocalAccountsToDb([account._id]);
 
-            await this.sendMessageToUser(
-              chatId.toString(),
-              enableDisableAccoutText(fetchState, account.nickName)
-            );
+            // await this.sendMessageToUser(
+            //   chatId.toString(),
+            //   enableDisableAccoutText(fetchState, account.nickName)
+            // );
+            const aums =
+              await this.accountUserMasterService.findAccountUserMasters({
+                accountId: account._id,
+              });
+
+            for (const aum of aums) {
+              const [user1] = (await this.userService.findUser({
+                _id: aum.userId,
+              })) as User[];
+
+              await this.sendMessageToUser(
+                user1.chatId,
+                aUserDisabledEnabledAnAccountText(
+                  user1.fullName === user.fullName ? "You" : user.fullName,
+                  account.nickName,
+                  fetchState
+                )
+              );
+            }
           }
         } else {
           await this.sendMessageToUser(

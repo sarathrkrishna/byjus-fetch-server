@@ -97,10 +97,10 @@ export const unknownUser = `Unknown user, please subscribe if you are a user to 
 export const aUserDisabledEnabledAnAccountText = (
   fullName: string,
   accNickname: string,
-  state: "ea" | "da"
+  state: "ea" | "da" | "enable" | "disable"
 ) =>
   `${
-    state === "ea"
+    state === "ea" || state === "enable"
       ? `${fullName} enabled the account ${accNickname}. You can disable the account if you like by typing <pre>/${accNickname}/disable</pre>`
       : `${fullName} disabled the account ${accNickname}. You can enable the account if you like by typing <pre>/${accNickname}/enable</pre>`
   }`;
