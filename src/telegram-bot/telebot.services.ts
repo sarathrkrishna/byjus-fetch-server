@@ -201,7 +201,7 @@ export class TeleBotService {
               (state === "ea" && acc.fetchEnabled) ||
               (state === "da" && !acc.fetchEnabled)
             ) {
-              return;
+              continue;
             }
 
             const aums =
