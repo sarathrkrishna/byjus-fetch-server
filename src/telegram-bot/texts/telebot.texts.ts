@@ -61,8 +61,14 @@ export const enableDisableAccoutText = (state: string, nickName: string) =>
 export const restartAccountText = (nickName: string) =>
   `Account <b>${nickName}</b> has been restarted by you.`;
 
-export const cannotEnableDueToTooMuchRequestError = `
+export const cannotRestartDueToTooMuchRequestError = `
 Cannot restart the account as the account was disabled due to too much requests error.
+`;
+export const cannotRestartAlreadyRestarted = `
+Cannot restart the account as the account was already running.
+`;
+export const alreadyInTheRequestedState = `
+The account is already in the requested state.
 `;
 
 export const errorNotifyText = (text: string, nickName: string) => `
