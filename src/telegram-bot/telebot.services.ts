@@ -295,6 +295,8 @@ export class TeleBotService {
                 chatId.toString(),
                 alreadyInTheRequestedState
               );
+
+              return;
             }
             this.accountService.updateLocalAccounts([
               {
