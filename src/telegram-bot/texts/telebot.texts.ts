@@ -65,7 +65,7 @@ export const cannotRestartDueToTooMuchRequestError = `
 Cannot restart the account as the account was disabled due to too much requests error.
 `;
 export const cannotRestartAlreadyRestarted = `
-Cannot restart the account as the account was already running.
+Cannot restart the account as the account is already running.
 `;
 export const alreadyInTheRequestedState = `
 The account is already in the requested state.
