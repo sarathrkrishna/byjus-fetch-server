@@ -3,6 +3,8 @@ import { Cron, SchedulerRegistry } from "@nestjs/schedule";
 import { CronJob } from "cron";
 import { AccountService } from "src/account/account.service";
 import { NetworkService } from "src/network/network.service";
+import { Post } from "src/post/post.schema";
+import { PostService } from "src/post/post.service";
 import {
   FETCH_CYCLE_CRON_NAME,
   FETCH_CYCLE_CRON_TIME,
@@ -28,7 +30,8 @@ export class TaskService {
     private readonly accountService: AccountService,
     private readonly schedulerRegistry: SchedulerRegistry,
     private readonly newtworkService: NetworkService,
-    private readonly telebotService: TeleBotService
+    private readonly telebotService: TeleBotService,
+    private readonly postService: PostService
   ) {}
 
   @Cron(FETCH_CYCLE_CRON_TIME, {
@@ -284,6 +287,7 @@ export class TaskService {
                 ),
               })),
               accountId: fetcheable.accountId,
+              alreadyFetched: fetcheable.status === "already_fetched",
             };
 
             const maxCanAnswerTill = questionFetched.postData.reduce(
@@ -320,10 +324,34 @@ export class TaskService {
         })
       )
     ).filter((v) => !!v);
-    console.log(JSON.stringify(questionDatas));
-    for (const qd of questionDatas) {
-      await this.telebotService.informQuestionAvailability(qd);
-    }
+
+    await Promise.all(
+      questionDatas.map(async (qd) => {
+        const posts = await this.postService.addManyPosts(
+          qd.postData.map((pd) => {
+            return {
+              postId: pd.id,
+              accountId: qd.accountId,
+              description: pd.description,
+              subjectName: pd.subject_name,
+              grade: pd.grade,
+              totalPoints: pd.total_points,
+              createdAt: pd.created_at,
+              updatedAt: pd.updated_at,
+              subjectExpertName: pd.subject_expert_name,
+              canAnswerTill: pd.can_answer_till,
+            };
+          })
+        );
+        // weather the question is already fetched or not is available here
+        // note: already fetched status is applyied on all posts in a single fetch for some reason
+        await this.telebotService.informQuestionAvailability(
+          posts,
+          qd.accountId,
+          qd.alreadyFetched
+        );
+      })
+    );
   }
 
   async toggleTask(state: "enable" | "disable") {

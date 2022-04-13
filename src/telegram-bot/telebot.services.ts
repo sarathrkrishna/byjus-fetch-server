@@ -14,7 +14,7 @@ import { QuestionFetchedDto } from "src/tasks/dto/task.dto";
 import { TaskService } from "src/tasks/task.service";
 import { User } from "src/user/user.schema";
 import { UserService } from "src/user/user.service";
-import { Update } from "./dtos/telebot.dto";
+import { LinkAuthDto, Update } from "./dtos/telebot.dto";
 import {
   alreadyInTheRequestedState,
   aUserDisabledEnabledAnAccountText,
@@ -40,6 +40,8 @@ import {
   userAlreadySubscribedText,
   warnNotifyText,
 } from "./texts/telebot.texts";
+import { JsonEncService } from "src/json-enc/jsonenc.service";
+import { Post } from "src/post/post.schema";
 
 @Injectable()
 export class TeleBotService {
@@ -55,7 +57,8 @@ export class TeleBotService {
     private readonly configService: ConfigService<ConfigDto>,
     private readonly userService: UserService,
     private readonly accountService: AccountService,
-    private readonly accountUserMasterService: AccountUserMasterService
+    private readonly accountUserMasterService: AccountUserMasterService,
+    private readonly jsonEncService: JsonEncService
   ) {}
 
   sendMessageToUser(chatId: string, text = "", parseAsHtml = true) {
@@ -348,8 +351,11 @@ export class TeleBotService {
     }
   }
 
-  async informQuestionAvailability(questionData: QuestionFetchedDto) {
-    const { accountId, postData } = questionData;
+  async informQuestionAvailability(
+    posts: Post[],
+    accountId: ObjectId,
+    alreadyFetched = false
+  ) {
     const account = this.accountService.findLocalAccountById(accountId);
 
     const accUsrMstrList =
@@ -368,17 +374,30 @@ export class TeleBotService {
       )
     )) as User[];
 
-    for (const user of users) {
-      for (const post of postData) {
-        await this.notifyTelegram(
-          questionMetaText(post),
-          TELE_NOTIFY_CODES.INFO,
-          user.chatId,
-          account.nickName
-        );
-        await this.sendMessageToUser(user.chatId, post.description, false);
-      }
-    }
+    await Promise.all(
+      users.map(async (user) => {
+        for (const post of posts) {
+          const data: LinkAuthDto = {
+            postDocId: post._id,
+            postId: post.postId,
+            userId: user._id,
+          };
+
+          const crypto = this.jsonEncService.encrypt<LinkAuthDto>(data);
+          const solvePageLink = `${this.configService.get(
+            "domain_url"
+          )}/solve/solve-page?ukey=${crypto}`;
+
+          await this.notifyTelegram(
+            questionMetaText(post, solvePageLink),
+            TELE_NOTIFY_CODES.INFO,
+            user.chatId,
+            account.nickName
+          );
+          await this.sendMessageToUser(user.chatId, post.description, false);
+        }
+      })
+    );
   }
 
   async informToomuchRequestsError(accountId: ObjectId) {

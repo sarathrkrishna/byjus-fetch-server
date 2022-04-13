@@ -7,4 +7,5 @@ export default (): ConfigDto => ({
   db_connection_string: process.env.DB_CONNECTION_STRING,
   tel_bot_token: process.env.TEL_BOT_TOKEN,
   domain_url: process.env.DOMAIN_URL,
+  json_enc_key: process.env.JSON_ENC_KEY,
 });

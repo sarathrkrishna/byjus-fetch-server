@@ -1,5 +1,6 @@
 import { stat } from "fs";
 import { Account } from "src/account/account.schema";
+import { Post } from "src/post/post.schema";
 import { getLocalTimeFromByjusStamp } from "src/shared/utils/general-utilities";
 import { PostDto } from "src/tasks/dto/task.dto";
 
@@ -85,11 +86,12 @@ export const warnNotifyText = (text: string, nickName: string) => `
 ${text}
 `;
 
-export const questionMetaText = (post: PostDto) => `
-Question Id: ${post.id}
-Subject: ${post.subject_name}
-Points: ${post.total_points}
-Available Till: ${getLocalTimeFromByjusStamp(post.can_answer_till)}
+export const questionMetaText = (post: Post, solvePageLink: string) => `
+Question Id: ${post.postId}
+Subject: ${post.subjectName}
+Points: ${post.totalPoints}
+Available Till: ${getLocalTimeFromByjusStamp(post.canAnswerTill)}
+Solve At: <a href="${solvePageLink}">${solvePageLink}</a>
 `;
 
 export const tooMuchRequestsError = `Too much requests, disabled for 1 Hr.`;
