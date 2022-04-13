@@ -41,6 +41,7 @@ import {
   warnNotifyText,
 } from "./texts/telebot.texts";
 import { JsonEncService } from "src/json-enc/jsonenc.service";
+import { Post } from "src/post/post.schema";
 
 @Injectable()
 export class TeleBotService {
@@ -350,8 +351,11 @@ export class TeleBotService {
     }
   }
 
-  async informQuestionAvailability(questionData: QuestionFetchedDto) {
-    const { accountId, postData } = questionData;
+  async informQuestionAvailability(
+    posts: Post[],
+    accountId: ObjectId,
+    alreadyFetched = false
+  ) {
     const account = this.accountService.findLocalAccountById(accountId);
 
     const accUsrMstrList =
@@ -372,9 +376,10 @@ export class TeleBotService {
 
     await Promise.all(
       users.map(async (user) => {
-        for (const post of postData) {
+        for (const post of posts) {
           const data: LinkAuthDto = {
-            postId: post.id,
+            postDocId: post._id,
+            postId: post.postId,
             userId: user._id,
           };
 

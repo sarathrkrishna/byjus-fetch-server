@@ -287,6 +287,7 @@ export class TaskService {
                 ),
               })),
               accountId: fetcheable.accountId,
+              alreadyFetched: fetcheable.status === "already_fetched",
             };
 
             const maxCanAnswerTill = questionFetched.postData.reduce(
@@ -326,7 +327,7 @@ export class TaskService {
 
     await Promise.all(
       questionDatas.map(async (qd) => {
-        const post = await this.postService.addManyPosts(
+        const posts = await this.postService.addManyPosts(
           qd.postData.map((pd) => {
             return {
               postId: pd.id,
@@ -342,7 +343,13 @@ export class TaskService {
             };
           })
         );
-        await this.telebotService.informQuestionAvailability(qd);
+        // weather the question is already fetched or not is available here
+        // note: already fetched status is applyied on all posts in a single fetch for some reason
+        await this.telebotService.informQuestionAvailability(
+          posts,
+          qd.accountId,
+          qd.alreadyFetched
+        );
       })
     );
   }

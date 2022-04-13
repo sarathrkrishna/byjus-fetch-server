@@ -12,4 +12,9 @@ export class PostService {
   addManyPosts(postDatas: Post[]) {
     return this.postModel.create(postDatas);
   }
+  getOnePostById(postId: number) {
+    return this.postModel.findOne({
+      postId,
+    });
+  }
 }

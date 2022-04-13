@@ -25,6 +25,7 @@ export class Update {
 }
 
 export class LinkAuthDto {
+  postDocId: ObjectId;
   postId: number;
   userId: ObjectId;
 }

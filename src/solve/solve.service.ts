@@ -7,8 +7,9 @@ import { GetSolvePageInputDto } from "./dtos/solve.dto";
 export class SolveService {
   constructor(private readonly jsonEncService: JsonEncService) {}
   async getSolvePage(query: GetSolvePageInputDto) {
-    const { postId, userId } = this.jsonEncService.decrypt<LinkAuthDto>(
-      query.ukey
-    );
+    const { postDocId, postId, userId } =
+      this.jsonEncService.decrypt<LinkAuthDto>(query.ukey);
+
+    return { postDocId, postId, userId };
   }
 }
