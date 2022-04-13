@@ -9,6 +9,9 @@ import { TeleBotModule } from "./telegram-bot/telebot.module";
 import { AppService } from "./app.service";
 import { UserModule } from "./user/user.module";
 import { PingModule } from "./server-ping/ping.module";
+import { PostModule } from "./post/post.module";
+import { JsonEncModule } from "./json-enc/jsonenc.module";
+import { SolveModule } from "./solve/solve.module";
 
 const NODE_ENV = process.env.NODE_ENV;
 
@@ -35,6 +38,9 @@ const NODE_ENV = process.env.NODE_ENV;
     TeleBotModule,
     UserModule,
     PingModule,
+    PostModule,
+    JsonEncModule,
+    SolveModule,
   ],
   controllers: [],
   providers: [AppService],

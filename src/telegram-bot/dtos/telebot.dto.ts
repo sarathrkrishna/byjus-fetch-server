@@ -1,3 +1,5 @@
+import { ObjectId } from "mongoose";
+
 export class Update {
   update_id: number;
   message: {
@@ -20,4 +22,9 @@ export class Update {
     date: number;
     text: string;
   };
+}
+
+export class LinkAuthDto {
+  postId: number;
+  userId: ObjectId;
 }

@@ -85,11 +85,12 @@ export const warnNotifyText = (text: string, nickName: string) => `
 ${text}
 `;
 
-export const questionMetaText = (post: PostDto) => `
+export const questionMetaText = (post: PostDto, solvePageLink: string) => `
 Question Id: ${post.id}
 Subject: ${post.subject_name}
 Points: ${post.total_points}
 Available Till: ${getLocalTimeFromByjusStamp(post.can_answer_till)}
+Solve At: <a href="${solvePageLink}">${solvePageLink}</a>
 `;
 
 export const tooMuchRequestsError = `Too much requests, disabled for 1 Hr.`;

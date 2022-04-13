@@ -3,6 +3,8 @@ import { Cron, SchedulerRegistry } from "@nestjs/schedule";
 import { CronJob } from "cron";
 import { AccountService } from "src/account/account.service";
 import { NetworkService } from "src/network/network.service";
+import { Post } from "src/post/post.schema";
+import { PostService } from "src/post/post.service";
 import {
   FETCH_CYCLE_CRON_NAME,
   FETCH_CYCLE_CRON_TIME,
@@ -28,7 +30,8 @@ export class TaskService {
     private readonly accountService: AccountService,
     private readonly schedulerRegistry: SchedulerRegistry,
     private readonly newtworkService: NetworkService,
-    private readonly telebotService: TeleBotService
+    private readonly telebotService: TeleBotService,
+    private readonly postService: PostService
   ) {}
 
   @Cron(FETCH_CYCLE_CRON_TIME, {
@@ -320,10 +323,28 @@ export class TaskService {
         })
       )
     ).filter((v) => !!v);
-    console.log(JSON.stringify(questionDatas));
-    for (const qd of questionDatas) {
-      await this.telebotService.informQuestionAvailability(qd);
-    }
+
+    await Promise.all(
+      questionDatas.map(async (qd) => {
+        const post = await this.postService.addManyPosts(
+          qd.postData.map((pd) => {
+            return {
+              postId: pd.id,
+              accountId: qd.accountId,
+              description: pd.description,
+              subjectName: pd.subject_name,
+              grade: pd.grade,
+              totalPoints: pd.total_points,
+              createdAt: pd.created_at,
+              updatedAt: pd.updated_at,
+              subjectExpertName: pd.subject_expert_name,
+              canAnswerTill: pd.can_answer_till,
+            };
+          })
+        );
+        await this.telebotService.informQuestionAvailability(qd);
+      })
+    );
   }
 
   async toggleTask(state: "enable" | "disable") {

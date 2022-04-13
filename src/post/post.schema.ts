@@ -1,5 +1,6 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
-import { Document } from "mongoose";
+import { Document, Schema as SchemaObj } from "mongoose";
+import { Account } from "src/account/account.schema";
 import { ObjectId } from "src/shared/dtos/mongo.dto";
 
 export type PostDocument = Post & Document;
@@ -10,6 +11,9 @@ export class Post {
 
   @Prop({ required: true })
   postId: number;
+
+  @Prop({ type: SchemaObj.Types.ObjectId, ref: "Account" })
+  accountId: ObjectId;
 
   @Prop({ required: true })
   description: string;
