@@ -54,7 +54,7 @@ Accounts to which you are linked:\n
             )}]`
       } | ${acc.fetchEnabled ? "Enabled" : "Disabled"}`
   )
-  .join("\n")} </pre>
+  .join("\n\n")} </pre>
 `;
 
 export const enableDisableAccoutText = (state: string, nickName: string) =>
