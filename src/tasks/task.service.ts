@@ -297,7 +297,7 @@ export class TaskService {
 
             await this.accountService.disableTillAccountSyncToDb(
               fetcheable.accountId,
-              getLocalTimeStampFromByjusStamp(maxCanAnswerTill),
+              maxCanAnswerTill,
               fetcheable.status === "already_fetched"
                 ? DISABLED_REASONS.QUESTION_FETCHED_ALREADY
                 : DISABLED_REASONS.QUESTION_FETCHED_HALT
