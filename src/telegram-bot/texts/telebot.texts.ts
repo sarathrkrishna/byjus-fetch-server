@@ -49,7 +49,9 @@ Accounts to which you are linked:\n
           ? acc.fetchEnabled
             ? "Running"
             : "Runnable"
-          : `Stopped (${acc.disableReason})`
+          : `Stopped (${acc.disableReason}) [${getLocalTimeFromByjusStamp(
+              acc.disableTill
+            )}]`
       } | ${acc.fetchEnabled ? "Enabled" : "Disabled"}`
   )
   .join("\n")} </pre>
