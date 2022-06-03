@@ -7,8 +7,13 @@ export const getCurrentLocalTime = (timeZone?: string) =>
     timeZone: timeZone || DEF_TIMEZONE,
   });
 
+export const getLocalTimeStampFromByjusStamp = (stamp: number) =>
+  parseInt(String(stamp) + "000");
+
 export const getLocalTimeFromByjusStamp = (stamp: number) =>
-  new Date(+(String(stamp) + "000"));
+  new Date(stamp).toLocaleString(undefined, {
+    timeZone: DEF_TIMEZONE,
+  });
 
 export const delayMs = async (delayInMs: number) =>
   new Promise((resolve) => {

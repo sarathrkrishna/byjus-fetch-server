@@ -49,10 +49,12 @@ Accounts to which you are linked:\n
           ? acc.fetchEnabled
             ? "Running"
             : "Runnable"
-          : `Stopped (${acc.disableReason})`
+          : `Stopped (${acc.disableReason}) [${getLocalTimeFromByjusStamp(
+              acc.disableTill
+            )}]`
       } | ${acc.fetchEnabled ? "Enabled" : "Disabled"}`
   )
-  .join("\n")} </pre>
+  .join("\n\n")} </pre>
 `;
 
 export const enableDisableAccoutText = (state: string, nickName: string) =>
@@ -65,7 +67,7 @@ export const cannotRestartDueToTooMuchRequestError = `
 Cannot restart the account as the account was disabled due to too much requests error.
 `;
 export const cannotRestartAlreadyRestarted = `
-Cannot restart the account as the account was already running.
+Cannot restart the account as the account is already running.
 `;
 export const alreadyInTheRequestedState = `
 The account is already in the requested state.

@@ -14,6 +14,7 @@ import {
   createAccountSpecificLog,
   delayMs,
   getCurrentLocalTime,
+  getLocalTimeStampFromByjusStamp,
 } from "src/shared/utils/general-utilities";
 import { TeleBotService } from "src/telegram-bot/telebot.services";
 import { DoubtCheckDto, PostDto, QuestionFetchedDto } from "./dto/task.dto";
@@ -275,10 +276,12 @@ export class TaskService {
                 subject_name: post.subject_name,
                 grade: post.grade,
                 total_points: post.total_points,
-                created_at: post.created_at,
-                updated_at: post.updated_at,
+                created_at: getLocalTimeStampFromByjusStamp(post.created_at),
+                updated_at: getLocalTimeStampFromByjusStamp(post.updated_at),
                 subject_expert_name: post.subject_expert_name,
-                can_answer_till: post.can_answer_till,
+                can_answer_till: getLocalTimeStampFromByjusStamp(
+                  post.can_answer_till
+                ),
               })),
               accountId: fetcheable.accountId,
             };
@@ -291,17 +294,14 @@ export class TaskService {
             );
 
             // disable account for 2 Hrs
-            try {
-              await this.accountService.disableTillAccountSyncToDb(
-                fetcheable.accountId,
-                parseInt(String(maxCanAnswerTill) + "000"),
-                fetcheable.status === "already_fetched"
-                  ? DISABLED_REASONS.QUESTION_FETCHED_ALREADY
-                  : DISABLED_REASONS.QUESTION_FETCHED_HALT
-              );
-            } catch (error) {
-              console.log("error at disable til");
-            }
+
+            await this.accountService.disableTillAccountSyncToDb(
+              fetcheable.accountId,
+              maxCanAnswerTill,
+              fetcheable.status === "already_fetched"
+                ? DISABLED_REASONS.QUESTION_FETCHED_ALREADY
+                : DISABLED_REASONS.QUESTION_FETCHED_HALT
+            );
 
             return questionFetched;
           } else {
@@ -320,7 +320,7 @@ export class TaskService {
         })
       )
     ).filter((v) => !!v);
-
+    console.log(JSON.stringify(questionDatas));
     for (const qd of questionDatas) {
       await this.telebotService.informQuestionAvailability(qd);
     }
